@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from typing import Callable, Optional
 
-from config import (
+from .config import (
     INPUT_VIDEO,
     OUTPUT_VIDEO,
     TILE_ROWS,
@@ -15,7 +15,7 @@ from config import (
     IOU
 )
 
-from detector import (
+from .detector import (
     model_n,
     model_s,
     device,
@@ -23,9 +23,9 @@ from detector import (
     nms_boxes
 )
 
-from tracker import SimpleTracker
+from .tracker import SimpleTracker
 
-from drawing import (
+from .drawing import (
     draw_detections,
     draw_footer
 )

@@ -1,7 +1,5 @@
-import sys
 import uuid
 import json
-import threading
 from pathlib import Path
 from typing import Dict, Any
 
@@ -9,12 +7,10 @@ from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
-# Add app directory to path to allow importing video_processor and config
 BASE_DIR = Path(__file__).resolve().parent
-sys.path.append(str(BASE_DIR / "app"))
 
-from video_processor import process_video, create_dummy_video
-from config import INPUT_DIR, OUTPUT_DIR
+from app.video_processor import process_video, create_dummy_video
+from app.config import INPUT_DIR, OUTPUT_DIR
 
 app = FastAPI(
     title="AI Exam Invigilation API",
@@ -131,10 +127,6 @@ def test_invigilation(background_tasks: BackgroundTasks):
     input_path = INPUT_DIR / "BACKVIEW.mp4"
     output_path = OUTPUT_DIR / f"{task_id}_processed.mp4"
     
-    # Generate dummy video if not already present
-    if not input_path.exists() or input_path.stat().st_size == 0:
-        create_dummy_video(input_path)
-        
     # Start task in background thread
     background_tasks.add_task(run_invigilation_task, task_id, input_path, output_path)
     

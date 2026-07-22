@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from collections import defaultdict
 
-from config import SMOOTH_WINDOW
+from .config import SMOOTH_WINDOW
 
 # ---------------------------------------------------------------
 # BOX SMOOTHING

@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from ultralytics import YOLO
 
-from config import (
+from .config import (
     YOLO_N_MODEL,
     YOLO_S_MODEL,
     CONFIDENCE,
@@ -211,24 +211,19 @@ def nms_boxes(boxes, iou_thresh=0.45):
     if not boxes:
         return []
 
-    boxes_arr = np.array(
-        [[b[0], b[1], b[2], b[3]] for b in boxes],
-        dtype=np.float32
-    )
+    kept = []
+    class_ids = sorted({box[5] for box in boxes})
 
-    scores_arr = np.array(
-        [b[4] for b in boxes],
-        dtype=np.float32
-    )
+    for class_id in class_ids:
+        class_boxes = [box for box in boxes if box[5] == class_id]
+        indices = cv2.dnn.NMSBoxes(
+            [[box[0], box[1], box[2], box[3]] for box in class_boxes],
+            [box[4] for box in class_boxes],
+            0.05,
+            iou_thresh
+        )
 
-    indices = cv2.dnn.NMSBoxes(
-        boxes_arr.tolist(),
-        scores_arr.tolist(),
-        0.05,
-        iou_thresh
-    )
+        if len(indices) > 0:
+            kept.extend(class_boxes[i] for i in indices.flatten())
 
-    if len(indices) == 0:
-        return []
-
-    return [boxes[i] for i in indices.flatten()]
+    return kept
