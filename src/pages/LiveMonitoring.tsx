@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '../components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
@@ -55,13 +55,13 @@ const cameraFeeds: CameraFeed[] = [
     status: 'recording',
     recording: true,
     alerts: 2,
-    malpracticeType: '👀 Persistent Side Gaze & Head Turn',
+    malpracticeType: '🗣️ Talking & Head Turn Detection',
     videoUrl: '/videos/exam_feed.mp4',
     poster: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80',
     severity: 'critical',
-    targetLabel: '🚨 YAW: +62.4° (GAZE ON DESK 15) [98.6%]',
-    confidence: 98.6,
-    boxPos: { x: 42, y: 35, w: 28, h: 48 },
+    targetLabel: '🚨 TALKING DETECTED AT BACK DESK [96.8%]',
+    confidence: 96.8,
+    boxPos: { x: 62, y: 32, w: 26, h: 42 },
     headYaw: 62.4,
     pitch: -18.2,
     wristPos: { x: 58, y: 65 },
@@ -94,9 +94,9 @@ const cameraFeeds: CameraFeed[] = [
     videoUrl: '/videos/exam_feed.mp4',
     poster: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
     severity: 'critical',
-    targetLabel: '🚨 AUDIO/GAZE INTERACTION FLAG [95.8%]',
+    targetLabel: '🚨 BACK ROW TALKING DETECTED [95.8%]',
     confidence: 95.8,
-    boxPos: { x: 38, y: 38, w: 32, h: 44 },
+    boxPos: { x: 60, y: 30, w: 28, h: 44 },
     headYaw: -42.1,
     pitch: -8.4,
     wristPos: { x: 54, y: 62 },
@@ -158,14 +158,14 @@ const initialAnomalies: Anomaly[] = [
   {
     id: 'MAL-9104',
     severity: 'critical',
-    title: 'Persistent Side Gaze & Head Turn (+62.4°)',
-    malpracticeCategory: 'Gaze / Head Rotation Violation',
-    description: '3D Head Pose Estimator flagged candidate STU-2024-88 turning head towards adjacent desk in uploaded video.',
+    title: 'Suspicious Talking & Head Turn at Back Desk',
+    malpracticeCategory: 'Talking / Verbal Interaction',
+    description: '3D Audio-Visual Head Tracker flagged two candidates at the back row talking and interacting.',
     camera: 'Hall A — Exam Room Main Feed (CAM-001)',
     studentId: 'STU-2024-88',
     timestamp: '10:54:12 AM',
-    confidence: 98.6,
-    boxCoords: '[X:420, Y:350, W:280, H:480]',
+    confidence: 96.8,
+    boxCoords: '[X:620, Y:320, W:260, H:420]',
   },
   {
     id: 'MAL-9103',
@@ -206,116 +206,125 @@ const initialAnomalies: Anomaly[] = [
 ];
 
 const mockSnapshots = [
-  { id: 's1', time: '10:54 AM', label: 'Uploaded Video Gaze Frame — Desk #14', confidence: '98.6%', severity: 'critical', url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=80', malpractice: '👀 Gaze Yaw' },
+  { id: 's1', time: '10:54 AM', label: 'Back Row Talking Detection Frame', confidence: '96.8%', severity: 'critical', url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=80', malpractice: '🗣️ Back Row Talking' },
   { id: 's2', time: '10:51 AM', label: 'Paper Pass Trajectory Snapshot', confidence: '95.8%', severity: 'critical', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80', malpractice: '📄 Paper Pass' },
   { id: 's3', time: '10:48 AM', label: 'Whispering Head Proximity Flag', confidence: '92.4%', severity: 'warning', url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80', malpractice: '🗣️ Whispering' },
   { id: 's4', time: '10:42 AM', label: 'Biometric Proxy Face Match Mismatch', confidence: '96.2%', severity: 'critical', url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80', malpractice: '👤 Proxy Face' },
 ];
 
-/* ── High-Precision MediaPipe/YOLO Overlay Component ── */
-function PrecisionAiOverlay({ feed, showSkeletons, showGaze }: { feed: CameraFeed; showSkeletons: boolean; showGaze: boolean }) {
-  const isCritical = feed.severity === 'critical';
-  const isWarning = feed.severity === 'warning';
-  const box = feed.boxPos;
+/* ── Dynamic AI Bounding Overlay (Turns Red During Talking/Suspect Activity) ── */
+function DynamicVideoAiOverlay({
+  feed,
+  showSkeletons,
+  showGaze,
+  videoTime
+}: {
+  feed: CameraFeed;
+  showSkeletons: boolean;
+  showGaze: boolean;
+  videoTime: number;
+}) {
+  // Time-synced trigger: If video plays during seconds 2.5–8.0 or 12.0–18.0, the two candidates at the back are flagged talking!
+  const isBackRowTalking = (videoTime >= 2.0 && videoTime <= 8.5) || (videoTime >= 12.0 && videoTime <= 18.5) || feed.severity === 'critical';
 
-  // Center points for pose keypoints
-  const cx = box.x + box.w / 2;
-  const cy = box.y + 12;
+  // Front Student (Normal)
+  const studentFront = { x: 10, y: 32, w: 26, h: 48, name: 'STU-01 (NORMAL)', isRed: false };
+  // Front-Center Student (Normal)
+  const studentCenter = { x: 36, y: 30, w: 26, h: 46, name: 'STU-02 (NORMAL)', isRed: false };
+  // Back-Right Student 1 (Talking/Suspect)
+  const studentBack1 = { x: 62, y: 28, w: 24, h: 44, name: isBackRowTalking ? '🚨 STU-14 (TALKING! 96.8%)' : 'STU-14 (NORMAL)', isRed: isBackRowTalking };
+  // Back-Right Student 2 (Talking Partner)
+  const studentBack2 = { x: 74, y: 34, w: 22, h: 40, name: isBackRowTalking ? '🚨 STU-15 (TALKING! 95.4%)' : 'STU-15 (NORMAL)', isRed: isBackRowTalking };
+
+  const students = [studentFront, studentCenter, studentBack1, studentBack2];
 
   return (
     <svg className="absolute inset-0 h-full w-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
-      {/* Grid overlay lines */}
-      <defs>
-        <pattern id="cam-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-          <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#cam-grid)" />
-
       {/* Laser scan line */}
       <motion.line
         x1="0"
         y1="0"
         x2="100"
         y2="0"
-        stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'}
+        stroke={isBackRowTalking ? '#ef4444' : '#10b981'}
         strokeWidth="0.7"
         strokeOpacity="0.85"
         animate={{ y1: [0, 100, 0], y2: [0, 100, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
       />
 
-      {/* Pose Estimation Skeleton (Head, Shoulders, Wrists) */}
-      {showSkeletons && (
-        <g stroke="rgba(56, 189, 248, 0.8)" strokeWidth="1" fill="#38bdf8">
-          {/* Head circle */}
-          <circle cx={cx} cy={cy} r="3" fill="none" stroke="#38bdf8" strokeWidth="1" />
-          {/* Spine & Shoulders */}
-          <line x1={cx} y1={cy + 3} x2={cx} y2={cy + 18} />
-          <line x1={cx - 10} y1={cy + 8} x2={cx + 10} y2={cy + 8} />
-          {/* Left Arm */}
-          <line x1={cx - 10} y1={cy + 8} x2={cx - 14} y2={cy + 22} />
-          <line x1={cx - 14} y1={cy + 22} x2={cx - 8} y2={cy + 32} />
-          {/* Right Arm */}
-          <line x1={cx + 10} y1={cy + 8} x2={cx + 15} y2={cy + 22} />
-          <line x1={cx + 15} y1={cy + 22} x2={cx + (feed.wristPos ? feed.wristPos.x - cx : 12)} y2={cy + (feed.wristPos ? feed.wristPos.y - cy : 32)} />
+      {/* Render Dynamic Bounding Box for Each Candidate in Frame */}
+      {students.map((st, i) => {
+        const strokeColor = st.isRed ? '#ef4444' : '#10b981';
+        const fillBg = st.isRed ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.05)';
+        const tagBg = st.isRed ? '#dc2626' : '#059669';
 
-          {/* Skeleton Keypoint Dots */}
-          <circle cx={cx} cy={cy} r="1" />
-          <circle cx={cx - 10} cy={cy + 8} r="1" />
-          <circle cx={cx + 10} cy={cy + 8} r="1" />
-          <circle cx={cx - 14} cy={cy + 22} r="1" />
-          <circle cx={cx + 15} cy={cy + 22} r="1" />
-          {/* Wrist keypoint */}
-          <circle
-            cx={feed.wristPos ? feed.wristPos.x : cx + 12}
-            cy={feed.wristPos ? feed.wristPos.y : cy + 32}
-            r="1.8"
-            fill={isCritical ? '#ef4444' : '#38bdf8'}
-          />
-        </g>
-      )}
+        return (
+          <g key={i}>
+            {/* Dynamic Bounding Box */}
+            <rect
+              x={st.x}
+              y={st.y}
+              width={st.w}
+              height={st.h}
+              fill={fillBg}
+              stroke={strokeColor}
+              strokeWidth={st.isRed ? '1.6' : '0.8'}
+              strokeDasharray={st.isRed ? 'none' : '2 1'}
+            />
 
-      {/* 3D Gaze / Head Pose Raycast Arrow */}
-      {showGaze && (
+            {/* Corner accents */}
+            <path d={`M${st.x} ${st.y + 4} L${st.x} ${st.y} L${st.x + 4} ${st.y}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
+            <path d={`M${st.x + st.w - 4} ${st.y} L${st.x + st.w} ${st.y} L${st.x + st.w} ${st.y + 4}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
+            <path d={`M${st.x + st.w} ${st.y + st.h - 4} L${st.x + st.w} ${st.y + st.h} L${st.x + st.w - 4} ${st.y + st.h}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
+            <path d={`M${st.x + 4} ${st.y + st.h} L${st.x} ${st.y + st.h} L${st.x} ${st.y + st.h - 4}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
+
+            {/* Top Label Tag */}
+            <rect
+              x={st.x}
+              y={st.y - 7}
+              width={st.w + 6}
+              height="6.5"
+              fill={tagBg}
+              rx="0.8"
+            />
+            <text
+              x={st.x + 1.5}
+              y={st.y - 2.2}
+              fill="#ffffff"
+              fontSize="1.9"
+              fontFamily="monospace"
+              fontWeight="bold"
+            >
+              {st.name}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Red Gaze Connection Ray between Back Row Talking Students */}
+      {isBackRowTalking && showGaze && (
         <g>
-          {/* Raycast vector pointing towards neighbor desk */}
           <motion.line
-            x1={cx}
-            y1={cy}
-            x2={cx + feed.headYaw * 0.45}
-            y2={cy + 14}
-            stroke={isWarning ? '#f59e0b' : '#38bdf8'}
-            strokeWidth="1.5"
-            strokeDasharray="2 1"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1, repeat: Infinity }}
+            x1="74"
+            y1="40"
+            x2="85"
+            y2="42"
+            stroke="#ef4444"
+            strokeWidth="1.4"
+            strokeDasharray="1.5 1"
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
           />
-          {/* Gaze Target Reticle */}
-          <circle
-            cx={cx + feed.headYaw * 0.45}
-            cy={cy + 14}
-            r="2"
-            fill="none"
-            stroke={isWarning ? '#ef4444' : '#38bdf8'}
-            strokeWidth="1"
-          />
-          <text
-            x={cx + feed.headYaw * 0.45 + 3}
-            y={cy + 15}
-            fill={isWarning ? '#f59e0b' : '#38bdf8'}
-            fontSize="2.2"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            GAZE YAW: {feed.headYaw}°
+          <text x="72" y="38" fill="#ef4444" fontSize="2.2" fontFamily="monospace" fontWeight="bold">
+            🗣️ INTERACTION
           </text>
         </g>
       )}
 
       {/* Bottom Telemetry Overlay */}
       <text x="3" y="97" fill="rgba(255,255,255,0.75)" fontSize="2.2" fontFamily="monospace">
-        EXAMEYE-AI FEED • YAW: {feed.headYaw}° • PITCH: {feed.pitch}° • LATENCY: 8.4ms
+        EXAMEYE-AI FEED • BACK ROW TALKING: {isBackRowTalking ? '🔴 DETECTED (CONF 96.8%)' : '🟢 NORMAL'} • TIME: {videoTime.toFixed(1)}s
       </text>
     </svg>
   );
@@ -329,7 +338,7 @@ export default function LiveMonitoring() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [showSkeletons, setShowSkeletons] = useState(true);
   const [showGaze, setShowGaze] = useState(true);
-  const [aiModel, setAiModel] = useState<'yolov8x' | 'mediapipe' | 'resnet'>('yolov8x');
+  const [videoTime, setVideoTime] = useState(0);
   const [filterSeverity, setFilterSeverity] = useState<'all' | 'critical' | 'warning'>('all');
   const [triggerNotification, setTriggerNotification] = useState<string | null>(null);
 
@@ -355,24 +364,44 @@ export default function LiveMonitoring() {
     }
   };
 
-  const simulateMalpractice = (type: 'gaze' | 'chit' | 'whisper' | 'proxy') => {
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setVideoTime(videoRef.current.currentTime);
+    }
+  };
+
+  const simulateMalpractice = (type: 'talking' | 'gaze' | 'chit' | 'proxy') => {
     const newId = `MAL-${Math.floor(1000 + Math.random() * 9000)}`;
     let newAnomaly: Anomaly;
 
-    if (type === 'gaze') {
+    if (type === 'talking') {
+      newAnomaly = {
+        id: newId,
+        severity: 'critical',
+        title: 'DETECTED: Back Row Talking & Interaction',
+        malpracticeCategory: 'Verbal Cheating',
+        description: '3D Audio-Visual Head Tracker flagged two students at back row talking (STU-14 & STU-15).',
+        camera: selectedFeed.name,
+        studentId: 'STU-14 / STU-15',
+        timestamp: new Date().toLocaleTimeString(),
+        confidence: 96.8,
+        boxCoords: '[X:620, Y:320, W:260, H:420]',
+      };
+      setTriggerNotification('🚨 TALKING DETECTED: Back Row Bounding Box Turned RED!');
+    } else if (type === 'gaze') {
       newAnomaly = {
         id: newId,
         severity: 'warning',
         title: 'FLAGGED: Persistent Side Head Turn (+62.4°)',
         malpracticeCategory: 'Gaze Violation',
-        description: 'Candidate head pose angle turned > 60° towards neighboring exam desk in uploaded video.',
+        description: 'Candidate head pose angle turned > 60° towards neighboring exam desk in video feed.',
         camera: selectedFeed.name,
         studentId: 'STU-SIM-88',
         timestamp: new Date().toLocaleTimeString(),
         confidence: 98.6,
         boxCoords: '[X:420, Y:350, W:280, H:480]',
       };
-      setTriggerNotification('⚠️ UPLOADED VIDEO FLAG: Side Head Turn & Gaze Violation Detected!');
+      setTriggerNotification('⚠️ SIDE GHOST GAZE FLAG: Head Turn Bounding Box Turned RED!');
     } else if (type === 'chit') {
       newAnomaly = {
         id: newId,
@@ -386,21 +415,7 @@ export default function LiveMonitoring() {
         confidence: 95.8,
         boxCoords: '[X:380, Y:380, W:320, H:440]',
       };
-      setTriggerNotification('🚨 UPLOADED VIDEO FLAG: Paper / Chit Transfer Gesture Detected!');
-    } else if (type === 'whisper') {
-      newAnomaly = {
-        id: newId,
-        severity: 'warning',
-        title: 'FLAGGED: Candidate Whispering Pattern',
-        malpracticeCategory: 'Audio-Visual Proximity',
-        description: 'Head proximity and lip motion tracking flagged verbal communication during exam.',
-        camera: selectedFeed.name,
-        studentId: 'STU-SIM-42',
-        timestamp: new Date().toLocaleTimeString(),
-        confidence: 92.4,
-        boxCoords: '[X:260, Y:260, W:300, H:480]',
-      };
-      setTriggerNotification('⚠️ UPLOADED VIDEO FLAG: Candidate Whispering & Interaction Detected!');
+      setTriggerNotification('🚨 PAPER PASS FLAG: Hand Trajectory Bounding Box Turned RED!');
     } else {
       newAnomaly = {
         id: newId,
@@ -414,7 +429,7 @@ export default function LiveMonitoring() {
         confidence: 96.2,
         boxCoords: '[X:600, Y:180, W:260, H:440]',
       };
-      setTriggerNotification('🚨 UPLOADED VIDEO FLAG: Proxy Candidate Biometric Mismatch!');
+      setTriggerNotification('🚨 PROXY FACE FLAG: Unregistered Candidate Box Turned RED!');
     }
 
     setAnomalies((prev) => [newAnomaly, ...prev]);
@@ -432,7 +447,7 @@ export default function LiveMonitoring() {
     <div className="space-y-6 font-sans select-none">
       <PageHeader
         title="Exam Hall Surveillance & Live Session Analytics"
-        description="High-accuracy Gaze Vector Raycasting, Paper Transfer Tracking, & Biometric Roster Matching"
+        description="Dynamic AI Bounding Boxes — Green for normal sitting, Red when talking or suspicious activity is detected"
         breadcrumb={[{ label: 'Live Session Surveillance' }]}
         actions={
           <div className="flex items-center gap-2">
@@ -463,7 +478,7 @@ export default function LiveMonitoring() {
               <AlertCircle className="h-6 w-6 text-white animate-bounce" />
               <span>{triggerNotification}</span>
             </div>
-            <span className="text-xs font-mono bg-black/30 px-3 py-1 rounded-full">LIVE VIDEO ANALYTICS</span>
+            <span className="text-xs font-mono bg-black/30 px-3 py-1 rounded-full font-bold">BOUNDING BOX RED FLAG</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -476,12 +491,18 @@ export default function LiveMonitoring() {
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-white">Live Session AI Detection Controls</p>
-              <p className="text-xs text-emerald-300/80">Toggle pose skeletons, 3D gaze vectors, and detection neural models</p>
+              <p className="text-sm font-extrabold text-white">Live Session Dynamic AI Detection Controls</p>
+              <p className="text-xs text-emerald-300/80">Bounding boxes turn RED automatically when candidates talk or turn head</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => simulateMalpractice('talking')}
+              className="flex items-center gap-1.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
+            >
+              <MessageSquare className="h-3.5 w-3.5" /> Flag Back Row Talking
+            </button>
             <button
               onClick={() => simulateMalpractice('gaze')}
               className="flex items-center gap-1.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
@@ -495,12 +516,6 @@ export default function LiveMonitoring() {
               <FileText className="h-3.5 w-3.5" /> Flag Paper Pass
             </button>
             <button
-              onClick={() => simulateMalpractice('whisper')}
-              className="flex items-center gap-1.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
-            >
-              <MessageSquare className="h-3.5 w-3.5" /> Flag Whispering
-            </button>
-            <button
               onClick={() => simulateMalpractice('proxy')}
               className="flex items-center gap-1.5 rounded-xl bg-purple-600/90 hover:bg-purple-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
             >
@@ -511,12 +526,12 @@ export default function LiveMonitoring() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Uploaded Video Stream Viewer */}
+        {/* Main Live Session Stream Viewer */}
         <Card className="lg:col-span-2 overflow-hidden shadow-lg border-olive/20 dark:border-slate-800">
           <CardContent className="p-0">
             <div className={`aspect-video w-full bg-slate-950 relative overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen w-screen' : 'rounded-t-2xl'}`}>
 
-              {/* Real Uploaded Video Stream */}
+              {/* Real Video Stream */}
               {selectedFeed.status === 'offline' ? (
                 <div className="flex h-full w-full flex-col items-center justify-center bg-slate-900 text-slate-400 p-6 text-center">
                   <Video className="h-16 w-16 mb-3 opacity-30" />
@@ -533,13 +548,19 @@ export default function LiveMonitoring() {
                   loop
                   muted={!audioEnabled}
                   playsInline
+                  onTimeUpdate={handleTimeUpdate}
                   className="h-full w-full object-cover"
                 />
               )}
 
-              {/* High-Precision AI Overlay */}
+              {/* Dynamic Time-Synced AI Bounding Box Overlay */}
               {selectedFeed.status !== 'offline' && (
-                <PrecisionAiOverlay feed={selectedFeed} showSkeletons={showSkeletons} showGaze={showGaze} />
+                <DynamicVideoAiOverlay
+                  feed={selectedFeed}
+                  showSkeletons={showSkeletons}
+                  showGaze={showGaze}
+                  videoTime={videoTime}
+                />
               )}
 
               {/* Header Badge Overlay */}
@@ -585,12 +606,12 @@ export default function LiveMonitoring() {
               <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-20">
                 <div className="flex items-center gap-3 rounded-xl bg-black/85 backdrop-blur-md px-3.5 py-1.5 border border-white/10 text-xs font-mono text-white/90 shadow-md">
                   <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                    <Scan className="h-3.5 w-3.5" /> ExamEye Video AI
+                    <Scan className="h-3.5 w-3.5" /> ExamEye Dynamic AI
                   </span>
                   <span className="text-white/30">|</span>
                   <span>Yaw: <strong className="text-amber-300">{selectedFeed.headYaw}°</strong></span>
                   <span className="text-white/30">|</span>
-                  <span>Pitch: <strong className="text-amber-300">{selectedFeed.pitch}°</strong></span>
+                  <span>Time: <strong className="text-emerald-300">{videoTime.toFixed(1)}s</strong></span>
                   <span className="text-white/30 hidden sm:inline">|</span>
                   <span className="hidden sm:inline">Match: <strong className="text-emerald-400">{selectedFeed.confidence}%</strong></span>
                 </div>
@@ -612,18 +633,18 @@ export default function LiveMonitoring() {
               </div>
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <Cpu className="h-4 w-4 text-primary dark:text-emerald-400" />
-                <span>Video Analysis: <strong className="text-emerald-600 dark:text-emerald-400">Exam Gaze + Motion Analytics</strong></span>
+                <span>Bounding Box Engine: <strong className="text-emerald-600 dark:text-emerald-400">Green (Normal) ➔ Red (Talking/Suspect)</strong></span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Uploaded Video Malpractice Logs */}
+        {/* Live Session Malpractice Logs */}
         <Card className="flex flex-col shadow-lg border-olive/20 dark:border-slate-800">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-bold">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Video Malpractice Logs
+              Live Session Malpractice Logs
             </CardTitle>
             <div className="flex gap-1">
               {(['all', 'critical', 'warning'] as const).map((sev) => (
@@ -731,7 +752,7 @@ export default function LiveMonitoring() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Image className="h-5 w-5 text-primary dark:text-emerald-400" />
-            Uploaded Video Malpractice Evidence Captures
+            Live Session Malpractice Evidence Captures
           </CardTitle>
           <span className="text-xs font-mono text-slate-400">Video Bounding Frames</span>
         </CardHeader>
