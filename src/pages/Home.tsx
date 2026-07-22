@@ -73,7 +73,7 @@ export default function Home() {
       <motion.div variants={itemVariants}>
         <PageHeader
           title={`${getHour()}, ${user?.name?.split(' ')[0] || 'Admin'}`}
-          description="Here's an overview of today's examination monitoring activities."
+          description="SecureX — AI-Powered Exam Monitoring. | Fairness Ensured."
           actions={
             <Button
               leftIcon={<Monitor className="h-4 w-4" />}

@@ -107,25 +107,17 @@ export default function Login() {
         )}
       </AnimatePresence>
 
-      {/* Mobile brand header */}
-      <motion.div variants={fadeUp} className="mb-8 flex items-center gap-3 lg:hidden">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
-          <Eye className="h-5 w-5 text-white" />
-        </div>
-        <span className="text-xl font-extrabold text-primary dark:text-emerald-400">ExamEye</span>
-      </motion.div>
-
-      {/* Header matching user image */}
+      {/* Brand Header with SecureX Logo */}
       <motion.div variants={fadeUp} className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="h-1 w-8 rounded-full bg-primary" />
-          <span className="text-xs font-extrabold uppercase tracking-widest text-primary dark:text-emerald-400">
-            SECURE ACCESS
-          </span>
+        <div className="flex items-center gap-3 mb-4">
+          <img src="/logo.png" alt="SecureX Logo" className="h-14 w-auto object-contain rounded-xl drop-shadow-md" />
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Secure<span className="text-amber-500">X</span></h2>
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">AI-Powered Exam Monitoring</p>
+          </div>
         </div>
-        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Welcome back</h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Sign in to the AI Monitoring Dashboard
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Sign in to access the SecureX AI Surveillance Dashboard
         </p>
       </motion.div>
 

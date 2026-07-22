@@ -72,18 +72,16 @@ function Sidebar({
         role="navigation"
         aria-label="Main navigation"
       >
-        {/* Header */}
+        {/* Header with SecureX Logo */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-olive/10 dark:border-slate-800">
           {!collapsed ? (
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-xs">
-                <Eye className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-lg font-bold text-primary dark:text-emerald-400 tracking-tight">ExamEye</span>
+              <img src="/logo.png" alt="SecureX Logo" className="h-9 w-auto rounded-lg object-contain" />
+              <span className="text-lg font-extrabold text-slate-900 dark:text-emerald-400 tracking-tight">Secure<span className="text-amber-500">X</span></span>
             </div>
           ) : (
-            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-xs">
-              <Eye className="h-5 w-5 text-white" />
+            <div className="mx-auto flex items-center justify-center">
+              <img src="/logo.png" alt="SecureX Logo" className="h-8 w-auto rounded-lg object-contain" />
             </div>
           )}
 
@@ -398,8 +396,11 @@ export function AppShell() {
 
         <footer className="border-t border-olive/10 dark:border-slate-800 px-4 py-4 lg:px-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-400 dark:text-slate-500">
-            <span>© {new Date().getFullYear()} ExamEye. All rights reserved.</span>
-            <span className="text-slate-300 dark:text-slate-600">AI-Based Smart Examination Monitoring System</span>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="SecureX" className="h-4 w-auto" />
+              <span>© {new Date().getFullYear()} <strong>SecureX</strong>. All rights reserved.</span>
+            </div>
+            <span className="text-slate-300 dark:text-slate-600 font-semibold tracking-wider uppercase text-[10px]">AI-Powered Exam Monitoring. | Fairness Ensured.</span>
             <span>v{APP_VERSION}</span>
           </div>
         </footer>

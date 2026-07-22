@@ -188,13 +188,11 @@ function IllustrationPanel() {
         className="relative z-10 flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
-            <Eye className="h-6 w-6 text-white" />
-          </div>
+          <img src="/logo.png" alt="SecureX Logo" className="h-12 w-auto object-contain rounded-xl drop-shadow-md" />
           <div className="flex items-center gap-2">
-            <span className="text-xl font-extrabold tracking-tight">ExamEye</span>
+            <span className="text-xl font-extrabold tracking-tight">Secure<span className="text-amber-400">X</span></span>
             <span className="text-[10px] rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-0.5 font-mono border border-emerald-500/30">
-              v1.0
+              AI MONITORING
             </span>
           </div>
         </div>
@@ -214,15 +212,15 @@ function IllustrationPanel() {
             animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.8, repeat: Infinity }}
           />
-          <span className="text-xs font-semibold text-emerald-300">System Online — All Cameras Active</span>
+          <span className="text-xs font-semibold text-emerald-300">System Online — AI Exam Monitoring Active</span>
         </div>
 
         {/* Hero Title */}
         <h1 className="text-4xl font-extrabold leading-tight tracking-tight mb-4">
           AI-Powered{' '}
-          <span className="text-emerald-300">Examination</span>
+          <span className="text-emerald-300">Exam Monitoring</span>
           <br />
-          Monitoring
+          Fairness Ensured
         </h1>
 
         {/* Subtitle */}
@@ -236,8 +234,8 @@ function IllustrationPanel() {
         {/* Feature Pills */}
         <div className="flex flex-wrap gap-2 mb-8">
           {[
-            { label: 'Face Detection', emoji: '👁️' },
-            { label: 'Phone Detection', emoji: '📱' },
+            { label: 'Face Verification', emoji: '👁️' },
+            { label: 'Gaze Tracking', emoji: '👀' },
             { label: 'Head Pose Analysis', emoji: '🔄' },
             { label: 'Smart Alerts', emoji: '🔔' },
           ].map((feat) => (
@@ -256,8 +254,9 @@ function IllustrationPanel() {
       </motion.div>
 
       {/* Footer text */}
-      <div className="relative z-10 text-white/40 text-xs font-mono">
-        Secured by ExamEye AI Monitoring System
+      <div className="relative z-10 text-white/50 text-xs font-mono flex items-center gap-2">
+        <img src="/logo.png" alt="SecureX" className="h-4 w-auto" />
+        <span>Secured by SecureX — AI-Powered Exam Monitoring</span>
       </div>
     </div>
   );
