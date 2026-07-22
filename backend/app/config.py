@@ -14,8 +14,8 @@ WEIGHTS_DIR = BASE_DIR / "weights"
 # MODEL FILES
 # ---------------------------------------------------
 
-YOLO_N_MODEL = WEIGHTS_DIR / "yolo26n.pt"
-YOLO_S_MODEL = WEIGHTS_DIR / "yolo26s.pt"
+YOLO_N_MODEL = WEIGHTS_DIR / "yolov26n.pt"
+YOLO_S_MODEL = WEIGHTS_DIR / "yolov26s.pt"
 
 # ---------------------------------------------------
 # VIDEO FILES

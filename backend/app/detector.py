@@ -22,22 +22,33 @@ print("Using Device:", device)
 # ---------------------------------------------------------------
 # LOAD MODELS
 # ---------------------------------------------------------------
-model_n = YOLO(str(YOLO_N_MODEL))
-model_s = YOLO(str(YOLO_S_MODEL))
+try:
+    print("Loading primary model:", YOLO_N_MODEL)
+    model_n = YOLO(str(YOLO_N_MODEL))
+except Exception as e:
+    print(f"Warning: Failed to load {YOLO_N_MODEL} ({e}). Falling back to yolov8n.pt")
+    model_n = YOLO("yolov8n.pt")
+
+try:
+    print("Loading secondary model:", YOLO_S_MODEL)
+    model_s = YOLO(str(YOLO_S_MODEL))
+except Exception as e:
+    print(f"Warning: Failed to load {YOLO_S_MODEL} ({e}). Falling back to yolov8s.pt")
+    model_s = YOLO("yolov8s.pt")
 
 
 # ---------------------------------------------------------------
 # SINGLE MODEL PREDICT
 # ---------------------------------------------------------------
 def predict_one(model, source, conf, iou, imgsz, device):
-    """Run one model prediction, return list of (x1,y1,x2,y2,conf)."""
+    """Run one model prediction, return list of (x1,y1,x2,y2,conf,cls)."""
 
     res = model.predict(
         source,
         conf=conf,
         iou=iou,
         imgsz=imgsz,
-        classes=[0],
+        classes=[0, 63, 67, 73],
         device=device,
         verbose=False,
     )[0]
@@ -49,8 +60,9 @@ def predict_one(model, source, conf, iou, imgsz, device):
 
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             bc = float(box.conf[0])
+            cls = int(box.cls[0])
 
-            boxes.append((x1, y1, x2, y2, bc))
+            boxes.append((x1, y1, x2, y2, bc, cls))
 
     return boxes
 
@@ -142,7 +154,8 @@ def run_ensemble_tiled(
                         b[1] + y1_t,
                         b[2] + x1_t,
                         b[3] + y1_t,
-                        b[4]
+                        b[4],
+                        b[5]
                     ))
 
     # -------------------------------------------------------
@@ -165,7 +178,8 @@ def run_ensemble_tiled(
                     b[1] + y_off,
                     b[2] + x_off,
                     b[3] + y_off,
-                    b[4]
+                    b[4],
+                    b[5]
                 ))
 
     # -------------------------------------------------------
