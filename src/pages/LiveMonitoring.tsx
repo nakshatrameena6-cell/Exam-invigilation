@@ -50,7 +50,7 @@ interface Anomaly {
 const cameraFeeds: CameraFeed[] = [
   {
     id: 'CAM-001',
-    name: 'Hall A — Exam Room Main Feed (Uploaded Video)',
+    name: 'Hall A — Exam Room Main Feed (Live Session)',
     location: 'Examination Hall A (Row 3, Desk 14)',
     status: 'recording',
     recording: true,
@@ -85,7 +85,7 @@ const cameraFeeds: CameraFeed[] = [
   },
   {
     id: 'CAM-003',
-    name: 'Hall B — Primary Video Stream (Uploaded Video)',
+    name: 'Hall B — Primary Video Stream (Live Session)',
     location: 'Examination Hall B (Center Aisle)',
     status: 'recording',
     recording: true,
@@ -313,45 +313,6 @@ function PrecisionAiOverlay({ feed, showSkeletons, showGaze }: { feed: CameraFee
         </g>
       )}
 
-      {/* Malpractice Target Bounding Box */}
-      <g>
-        <rect
-          x={box.x}
-          y={box.y}
-          width={box.w}
-          height={box.h}
-          fill={isCritical ? 'rgba(239, 68, 68, 0.2)' : isWarning ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.1)'}
-          stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'}
-          strokeWidth={isCritical ? '1.5' : '1'}
-        />
-
-        {/* Heavy corner brackets */}
-        <path d={`M${box.x} ${box.y + 6} L${box.x} ${box.y} L${box.x + 6} ${box.y}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
-        <path d={`M${box.x + box.w - 6} ${box.y} L${box.x + box.w} ${box.y} L${box.x + box.w} ${box.y + 6}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
-        <path d={`M${box.x + box.w} ${box.y + box.h - 6} L${box.x + box.w} ${box.y + box.h} L${box.x + box.w - 6} ${box.y + box.h}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
-        <path d={`M${box.x + 6} ${box.y + box.h} L${box.x} ${box.y + box.h} L${box.x} ${box.y + box.h - 6}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
-
-        {/* Banner Tag */}
-        <rect
-          x={box.x}
-          y={box.y - 12}
-          width={box.w + 14}
-          height="11"
-          fill={isCritical ? '#dc2626' : isWarning ? '#d97706' : '#059669'}
-          rx="1"
-        />
-        <text
-          x={box.x + 2}
-          y={box.y - 4}
-          fill="#ffffff"
-          fontSize="2.4"
-          fontFamily="monospace"
-          fontWeight="900"
-        >
-          {feed.targetLabel}
-        </text>
-      </g>
-
       {/* Bottom Telemetry Overlay */}
       <text x="3" y="97" fill="rgba(255,255,255,0.75)" fontSize="2.2" fontFamily="monospace">
         EXAMEYE-AI FEED • YAW: {feed.headYaw}° • PITCH: {feed.pitch}° • LATENCY: 8.4ms
@@ -470,9 +431,9 @@ export default function LiveMonitoring() {
   return (
     <div className="space-y-6 font-sans select-none">
       <PageHeader
-        title="Exam Hall Surveillance & Uploaded Video Malpractice Analytics"
+        title="Exam Hall Surveillance & Live Session Analytics"
         description="High-accuracy Gaze Vector Raycasting, Paper Transfer Tracking, & Biometric Roster Matching"
-        breadcrumb={[{ label: 'Uploaded Video Surveillance' }]}
+        breadcrumb={[{ label: 'Live Session Surveillance' }]}
         actions={
           <div className="flex items-center gap-2">
             <Badge variant="danger" dot>{criticalCount} Critical Cheating Flags</Badge>
@@ -515,7 +476,7 @@ export default function LiveMonitoring() {
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-extrabold text-white">Uploaded Video AI Detection Controls</p>
+              <p className="text-sm font-extrabold text-white">Live Session AI Detection Controls</p>
               <p className="text-xs text-emerald-300/80">Toggle pose skeletons, 3D gaze vectors, and detection neural models</p>
             </div>
           </div>
@@ -591,7 +552,7 @@ export default function LiveMonitoring() {
                   {selectedFeed.malpracticeType}
                 </Badge>
                 <span className="flex items-center gap-1.5 rounded-full bg-emerald-600/90 backdrop-blur-md px-3 py-1 text-xs font-mono font-bold text-white shadow-md">
-                  FEED: {selectedFeed.id} (UPLOADED VIDEO)
+                  FEED: {selectedFeed.id} (LIVE SESSION)
                 </span>
               </div>
 
