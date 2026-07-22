@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+
+venv/
+.env
+
+output/
+input/
+
+node_modules/
+dist/
+
+.DS_Store
