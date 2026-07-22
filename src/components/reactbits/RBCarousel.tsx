@@ -22,7 +22,7 @@ export interface RBCarouselProps {
 const DRAG_BUFFER = 0;
 const VELOCITY_THRESHOLD = 500;
 const GAP = 16;
-const SPRING_OPTIONS = { type: 'spring' as const, stiffness: 300, damping: 30 };
+const SPRING_OPTIONS = { type: 'spring' as const, stiffness: 220, damping: 24 };
 
 function RBCarouselCard({
   item, index, itemWidth, round, trackItemOffset, x, transition
@@ -31,31 +31,45 @@ function RBCarouselCard({
   trackItemOffset: number; x: any; transition: any;
 }) {
   const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
-  const rotateY = useTransform(x, range, [90, 0, -90], { clamp: false });
+  const rotateY = useTransform(x, range, [22, 0, -22], { clamp: true });
+  const scale = useTransform(x, range, [0.94, 1, 0.94], { clamp: true });
 
   return (
     <motion.div
-      className={`relative shrink-0 flex flex-col ${
+      key={`${item?.id ?? index}-${index}`}
+      className={`relative shrink-0 flex flex-col justify-between p-5 ${
         round
           ? 'items-center justify-center text-center bg-slate-950 border-0'
-          : 'items-start justify-between bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 rounded-2xl'
-      } overflow-hidden cursor-grab active:cursor-grabbing`}
+          : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md rounded-2xl'
+      } overflow-hidden cursor-grab active:cursor-grabbing select-none h-44`}
       style={{
         width: itemWidth,
-        height: round ? itemWidth : '100%',
         rotateY,
-        ...(round && { borderRadius: '50%' }),
+        scale,
+        ...(round && { borderRadius: '50%', height: itemWidth }),
       }}
       transition={transition}
     >
-      <div className={round ? 'p-0 m-0' : 'mb-4 p-5'}>
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30">
-          {item.icon}
-        </span>
+      <div>
+        <div className="flex items-center gap-3 mb-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/20 text-white">
+            {item.icon}
+          </span>
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            SecureX AI
+          </span>
+        </div>
+        <h4 className="text-slate-900 dark:text-white text-base font-extrabold mb-1 tracking-tight">
+          {item.title}
+        </h4>
+        <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed line-clamp-2">
+          {item.description}
+        </p>
       </div>
-      <div className={round ? 'px-1' : 'px-5 pb-5'}>
-        <div className="text-white text-sm font-extrabold mb-1">{item.title}</div>
-        <p className="text-slate-400 text-xs leading-relaxed">{item.description}</p>
+
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-400">
+        <span>FEATURE #{item.id}</span>
+        <span className="text-emerald-500 font-bold">ACTIVE</span>
       </div>
     </motion.div>
   );
@@ -63,11 +77,11 @@ function RBCarouselCard({
 
 export default function RBCarousel({
   items,
-  baseWidth = 300,
-  autoplay = false,
-  autoplayDelay = 3000,
-  pauseOnHover = false,
-  loop = false,
+  baseWidth = 280,
+  autoplay = true,
+  autoplayDelay = 3500,
+  pauseOnHover = true,
+  loop = true,
   round = false,
 }: RBCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -91,8 +105,8 @@ export default function RBCarousel({
 
   useEffect(() => {
     if (isResetting) return;
-    const animation = x.set(-effectiveIndex * trackItemOffset);
-  }, [effectiveIndex, trackItemOffset, isResetting]);
+    x.set(-effectiveIndex * trackItemOffset);
+  }, [effectiveIndex, trackItemOffset, isResetting, x]);
 
   useEffect(() => {
     if (!autoplay) return;
@@ -113,10 +127,10 @@ export default function RBCarousel({
     if (loop && currentIndex === carouselItems.length - 1) {
       setTimeout(() => {
         setIsResetting(true);
-        x.jump(-0 * trackItemOffset);
+        x.jump(0);
         setCurrentIndex(0);
         setTimeout(() => setIsResetting(false), 50);
-      }, 500);
+      }, 400);
     }
   }, [currentIndex, carouselItems.length, loop, trackItemOffset, x]);
 
@@ -131,16 +145,14 @@ export default function RBCarousel({
         setCurrentIndex(Math.min(currentIndex + 1, items.length - 1));
       }
     } else if (offset > DRAG_BUFFER || velocity > VELOCITY_THRESHOLD) {
-      if (loop && currentIndex === 0) {
-        // wrap to last
-      }
       setCurrentIndex(Math.max(currentIndex - 1, 0));
     }
   };
 
   return (
     <div
-      className="relative overflow-hidden"
+      className="relative overflow-hidden w-full py-2"
+      style={{ perspective: '1000px' }}
       ref={containerRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -171,17 +183,18 @@ export default function RBCarousel({
         ))}
       </motion.div>
 
-      {/* Dots */}
-      <div className="flex justify-center gap-2 mt-4">
+      {/* Dots Indicator */}
+      <div className="flex justify-center items-center gap-2 mt-5">
         {items.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`h-2 rounded-full transition-all duration-300 ${
               currentIndex === index
-                ? 'w-8 bg-emerald-500 shadow-md shadow-emerald-500/50'
-                : 'w-2 bg-slate-600 hover:bg-slate-500'
+                ? 'w-8 bg-emerald-500 shadow-md shadow-emerald-500/40'
+                : 'w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
             }`}
+            aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>

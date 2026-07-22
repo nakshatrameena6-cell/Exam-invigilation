@@ -17,7 +17,7 @@ export type DockProps = {
   magnification?: number;
 };
 
-const springConfig = { mass: 0.1, stiffness: 150, damping: 12 };
+const springConfig = { mass: 0.1, stiffness: 180, damping: 14 };
 
 function DockItem({
   children, onClick, mouseX, distance, magnification, baseItemSize, label, color
@@ -29,75 +29,87 @@ function DockItem({
   const isHovered = useMotionValue(0);
 
   const mouseDistance = useTransform(mouseX, (val) => {
-    const rect = ref.current?.getBoundingClientRect() ?? { x: 0, width: baseItemSize };
-    return val - rect.x - baseItemSize / 2;
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return distance + 1;
+    return val - (rect.left + rect.width / 2);
   });
 
   const targetSize = useTransform(mouseDistance, [-distance, 0, distance], [baseItemSize, magnification, baseItemSize]);
   const size = useSpring(targetSize, springConfig);
 
+  const brandColor = color || '#10b981';
+
   return (
-    <motion.div
-      ref={ref}
-      style={{ width: size, height: size }}
-      onHoverStart={() => isHovered.set(1)}
-      onHoverEnd={() => isHovered.set(0)}
-      onClick={onClick}
-      className="relative flex items-center justify-center rounded-2xl cursor-pointer transition-colors"
-      role="button"
-      tabIndex={0}
-    >
+    <div className="relative flex flex-col items-center justify-end">
+      {/* Tooltip Label */}
       <motion.div
-        className="absolute -top-10 px-2.5 py-1 rounded-lg text-xs font-bold text-white whitespace-nowrap pointer-events-none"
+        className="absolute -top-10 px-3 py-1 rounded-lg text-xs font-bold text-white shadow-md pointer-events-none font-sans z-30"
         style={{
-          backgroundColor: color || '#059669',
+          backgroundColor: brandColor,
           opacity: useTransform(isHovered, [0, 1], [0, 1]),
           y: useTransform(isHovered, [0, 1], [4, 0]),
+          scale: useTransform(isHovered, [0, 1], [0.95, 1]),
         }}
       >
         {label}
       </motion.div>
+
+      {/* Dock Button */}
       <motion.div
-        className="flex items-center justify-center w-full h-full rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shadow-lg backdrop-blur-md"
-        style={{
-          backgroundColor: color ? `${color}15` : 'rgba(16, 185, 129, 0.08)',
-        }}
+        ref={ref}
+        style={{ width: size, height: size }}
+        onHoverStart={() => isHovered.set(1)}
+        onHoverEnd={() => isHovered.set(0)}
+        onClick={onClick}
+        className="flex items-center justify-center rounded-2xl cursor-pointer transition-colors shadow-md relative overflow-hidden group"
+        role="button"
+        tabIndex={0}
       >
-        {children}
+        <div
+          className="flex items-center justify-center w-full h-full rounded-2xl border transition-all duration-200"
+          style={{
+            backgroundColor: `${brandColor}18`,
+            borderColor: `${brandColor}40`,
+          }}
+        >
+          {children}
+        </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
 export default function Dock({
   items,
   className = '',
-  distance = 140,
-  baseItemSize = 50,
-  magnification = 70,
+  distance = 120,
+  baseItemSize = 46,
+  magnification = 64,
 }: DockProps) {
   const mouseX = useMotionValue(Infinity);
 
   return (
-    <motion.div
-      className={`flex items-end gap-3 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 py-3 shadow-xl ${className}`}
-      onMouseMove={(e) => mouseX.set(e.pageX)}
-      onMouseLeave={() => mouseX.set(Infinity)}
-    >
-      {items.map((item, i) => (
-        <DockItem
-          key={i}
-          mouseX={mouseX}
-          distance={distance}
-          baseItemSize={baseItemSize}
-          magnification={magnification}
-          onClick={item.onClick}
-          label={item.label}
-          color={item.color}
-        >
-          {item.icon}
-        </DockItem>
-      ))}
-    </motion.div>
+    <div className="w-full flex justify-center py-2">
+      <motion.div
+        className={`inline-flex items-end gap-3.5 rounded-2xl border border-emerald-500/30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-5 py-3 shadow-glow ${className}`}
+        onMouseMove={(e) => mouseX.set(e.clientX)}
+        onMouseLeave={() => mouseX.set(Infinity)}
+      >
+        {items.map((item, i) => (
+          <DockItem
+            key={i}
+            mouseX={mouseX}
+            distance={distance}
+            baseItemSize={baseItemSize}
+            magnification={magnification}
+            onClick={item.onClick}
+            label={item.label}
+            color={item.color}
+          >
+            {item.icon}
+          </DockItem>
+        ))}
+      </motion.div>
+    </div>
   );
 }
