@@ -212,123 +212,7 @@ const mockSnapshots = [
   { id: 's4', time: '10:42 AM', label: 'Biometric Proxy Face Match Mismatch', confidence: '96.2%', severity: 'critical', url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80', malpractice: '👤 Proxy Face' },
 ];
 
-/* ── Dynamic AI Bounding Overlay (Turns Red During Talking/Suspect Activity) ── */
-function DynamicVideoAiOverlay({
-  feed,
-  showSkeletons,
-  showGaze,
-  videoTime
-}: {
-  feed: CameraFeed;
-  showSkeletons: boolean;
-  showGaze: boolean;
-  videoTime: number;
-}) {
-  // Time-synced trigger: If video plays during seconds 2.5–8.0 or 12.0–18.0, the two candidates at the back are flagged talking!
-  const isBackRowTalking = (videoTime >= 2.0 && videoTime <= 8.5) || (videoTime >= 12.0 && videoTime <= 18.5) || feed.severity === 'critical';
-
-  // Front Student (Normal)
-  const studentFront = { x: 10, y: 32, w: 26, h: 48, name: 'STU-01 (NORMAL)', isRed: false };
-  // Front-Center Student (Normal)
-  const studentCenter = { x: 36, y: 30, w: 26, h: 46, name: 'STU-02 (NORMAL)', isRed: false };
-  // Back-Right Student 1 (Talking/Suspect)
-  const studentBack1 = { x: 62, y: 28, w: 24, h: 44, name: isBackRowTalking ? '🚨 STU-14 (TALKING! 96.8%)' : 'STU-14 (NORMAL)', isRed: isBackRowTalking };
-  // Back-Right Student 2 (Talking Partner)
-  const studentBack2 = { x: 74, y: 34, w: 22, h: 40, name: isBackRowTalking ? '🚨 STU-15 (TALKING! 95.4%)' : 'STU-15 (NORMAL)', isRed: isBackRowTalking };
-
-  const students = [studentFront, studentCenter, studentBack1, studentBack2];
-
-  return (
-    <svg className="absolute inset-0 h-full w-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
-      {/* Laser scan line */}
-      <motion.line
-        x1="0"
-        y1="0"
-        x2="100"
-        y2="0"
-        stroke={isBackRowTalking ? '#ef4444' : '#10b981'}
-        strokeWidth="0.7"
-        strokeOpacity="0.85"
-        animate={{ y1: [0, 100, 0], y2: [0, 100, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-      />
-
-      {/* Render Dynamic Bounding Box for Each Candidate in Frame */}
-      {students.map((st, i) => {
-        const strokeColor = st.isRed ? '#ef4444' : '#10b981';
-        const fillBg = st.isRed ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.05)';
-        const tagBg = st.isRed ? '#dc2626' : '#059669';
-
-        return (
-          <g key={i}>
-            {/* Dynamic Bounding Box */}
-            <rect
-              x={st.x}
-              y={st.y}
-              width={st.w}
-              height={st.h}
-              fill={fillBg}
-              stroke={strokeColor}
-              strokeWidth={st.isRed ? '1.6' : '0.8'}
-              strokeDasharray={st.isRed ? 'none' : '2 1'}
-            />
-
-            {/* Corner accents */}
-            <path d={`M${st.x} ${st.y + 4} L${st.x} ${st.y} L${st.x + 4} ${st.y}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
-            <path d={`M${st.x + st.w - 4} ${st.y} L${st.x + st.w} ${st.y} L${st.x + st.w} ${st.y + 4}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
-            <path d={`M${st.x + st.w} ${st.y + st.h - 4} L${st.x + st.w} ${st.y + st.h} L${st.x + st.w - 4} ${st.y + st.h}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
-            <path d={`M${st.x + 4} ${st.y + st.h} L${st.x} ${st.y + st.h} L${st.x} ${st.y + st.h - 4}`} fill="none" stroke={strokeColor} strokeWidth="1.5" />
-
-            {/* Top Label Tag */}
-            <rect
-              x={st.x}
-              y={st.y - 7}
-              width={st.w + 6}
-              height="6.5"
-              fill={tagBg}
-              rx="0.8"
-            />
-            <text
-              x={st.x + 1.5}
-              y={st.y - 2.2}
-              fill="#ffffff"
-              fontSize="1.9"
-              fontFamily="monospace"
-              fontWeight="bold"
-            >
-              {st.name}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Red Gaze Connection Ray between Back Row Talking Students */}
-      {isBackRowTalking && showGaze && (
-        <g>
-          <motion.line
-            x1="74"
-            y1="40"
-            x2="85"
-            y2="42"
-            stroke="#ef4444"
-            strokeWidth="1.4"
-            strokeDasharray="1.5 1"
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-          />
-          <text x="72" y="38" fill="#ef4444" fontSize="2.2" fontFamily="monospace" fontWeight="bold">
-            🗣️ INTERACTION
-          </text>
-        </g>
-      )}
-
-      {/* Bottom Telemetry Overlay */}
-      <text x="3" y="97" fill="rgba(255,255,255,0.75)" fontSize="2.2" fontFamily="monospace">
-        EXAMEYE-AI FEED • BACK ROW TALKING: {isBackRowTalking ? '🔴 DETECTED (CONF 96.8%)' : '🟢 NORMAL'} • TIME: {videoTime.toFixed(1)}s
-      </text>
-    </svg>
-  );
-}
+/* ── Live Monitoring Page ── */
 
 export default function LiveMonitoring() {
   const [selectedFeed, setSelectedFeed] = useState<CameraFeed>(cameraFeeds[0]);
@@ -447,7 +331,7 @@ export default function LiveMonitoring() {
     <div className="space-y-6 font-sans select-none">
       <PageHeader
         title="Exam Hall Surveillance & Live Session Analytics"
-        description="Dynamic AI Bounding Boxes — Green for normal sitting, Red when talking or suspicious activity is detected"
+        description="Real-time examination hall camera feeds, malpractice alert triggers, and proctor log telemetry."
         breadcrumb={[{ label: 'Live Session Surveillance' }]}
         actions={
           <div className="flex items-center gap-2">
@@ -553,15 +437,6 @@ export default function LiveMonitoring() {
                 />
               )}
 
-              {/* Dynamic Time-Synced AI Bounding Box Overlay */}
-              {selectedFeed.status !== 'offline' && (
-                <DynamicVideoAiOverlay
-                  feed={selectedFeed}
-                  showSkeletons={showSkeletons}
-                  showGaze={showGaze}
-                  videoTime={videoTime}
-                />
-              )}
 
               {/* Header Badge Overlay */}
               <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2 z-20">
