@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '../components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
 import { BorderGlow } from '../components/common/BorderGlow';
@@ -10,7 +10,8 @@ import { Button } from '../components/common/Button';
 import {
   Video, Maximize, Minimize, AlertTriangle, Circle,
   Camera, MicOff, Volume2, Clock, Image, ShieldAlert,
-  Cpu, CheckCircle2, UserX, Smartphone, Play, Pause, RefreshCw, Scan
+  Cpu, CheckCircle2, UserX, Smartphone, Play, Pause, RefreshCw, Scan,
+  FileText, Eye, AlertCircle, Zap, Shield, Sparkles
 } from 'lucide-react';
 
 interface CameraFeed {
@@ -20,15 +21,20 @@ interface CameraFeed {
   status: 'online' | 'offline' | 'recording';
   recording: boolean;
   alerts: number;
+  malpracticeType: string;
   videoUrl: string;
   poster: string;
-  anomalyType?: 'critical' | 'warning' | 'none';
+  severity: 'critical' | 'warning' | 'none';
+  targetLabel: string;
+  confidence: number;
+  boxPos: { x: number; y: number; w: number; h: number };
 }
 
 interface Anomaly {
   id: string;
   severity: 'critical' | 'warning' | 'info';
   title: string;
+  malpracticeCategory: string;
   description: string;
   camera: string;
   studentId: string;
@@ -40,197 +46,241 @@ interface Anomaly {
 const cameraFeeds: CameraFeed[] = [
   {
     id: 'CAM-001',
-    name: 'Hall A — Front Desk Rows',
-    location: 'Examination Hall A',
-    status: 'recording',
-    recording: true,
-    alerts: 0,
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-students-sitting-at-desks-in-a-classroom-43187-large.mp4',
-    poster: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
-    anomalyType: 'none',
-  },
-  {
-    id: 'CAM-002',
-    name: 'Hall A — Rear Surveillance',
-    location: 'Examination Hall A',
-    status: 'recording',
-    recording: true,
-    alerts: 1,
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-female-student-reading-in-a-library-41541-large.mp4',
-    poster: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80',
-    anomalyType: 'warning',
-  },
-  {
-    id: 'CAM-003',
-    name: 'Hall B — Center Aisle Flagged',
-    location: 'Examination Hall B',
+    name: 'Hall A — Mobile Phone Cheating Zone',
+    location: 'Examination Hall A (Row 3, Desk 14)',
     status: 'recording',
     recording: true,
     alerts: 2,
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-people-working-in-a-modern-office-4328-large.mp4',
-    poster: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80',
-    anomalyType: 'critical',
+    malpracticeType: '📱 Mobile Phone Usage Under Desk',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-person-typing-on-a-laptop-42930-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80',
+    severity: 'critical',
+    targetLabel: '🚨 MOBILE PHONE IN HAND [96.4%]',
+    confidence: 96.4,
+    boxPos: { x: 55, y: 55, w: 22, h: 32 },
+  },
+  {
+    id: 'CAM-002',
+    name: 'Hall A — Side Peeking & Paper Copying',
+    location: 'Examination Hall A (Desk 22 & 23)',
+    status: 'recording',
+    recording: true,
+    alerts: 1,
+    malpracticeType: '👀 Neighbor Exam Sheet Peeking',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-female-student-reading-in-a-library-41541-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=600&q=80',
+    severity: 'warning',
+    targetLabel: '⚠️ HEAD POSE: YAW 62° LEFT (PEEKING)',
+    confidence: 89.1,
+    boxPos: { x: 28, y: 28, w: 28, h: 46 },
+  },
+  {
+    id: 'CAM-003',
+    name: 'Hall B — Unauthorized Chit Passing',
+    location: 'Examination Hall B (Center Aisle)',
+    status: 'recording',
+    recording: true,
+    alerts: 3,
+    malpracticeType: '📄 Cheat Sheet / Chit Transfer',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-students-sitting-at-desks-in-a-classroom-43187-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
+    severity: 'critical',
+    targetLabel: '🚨 OBJECT TRANSFER DETECTED [93.7%]',
+    confidence: 93.7,
+    boxPos: { x: 42, y: 45, w: 30, h: 38 },
   },
   {
     id: 'CAM-004',
-    name: 'Hall B — Entry Bay',
-    location: 'Examination Hall B',
-    status: 'online',
-    recording: false,
-    alerts: 0,
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-students-walking-in-a-university-hallway-4412-large.mp4',
-    poster: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=600&q=80',
-    anomalyType: 'none',
+    name: 'Hall B — Impersonation & Second Face',
+    location: 'Examination Hall B (Station 08)',
+    status: 'recording',
+    recording: true,
+    alerts: 1,
+    malpracticeType: '👤 Multiple Persons / Proxy Candidate',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-people-working-in-a-modern-office-4328-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80',
+    severity: 'critical',
+    targetLabel: '🚨 SECOND FACE IN FRAME (PROXY)',
+    confidence: 91.5,
+    boxPos: { x: 62, y: 20, w: 25, h: 42 },
   },
   {
     id: 'CAM-005',
-    name: 'Lab 3 — Workstation Typing',
-    location: 'Computer Lab 3',
+    name: 'Lab 3 — Book & Formula Sheet Under Desk',
+    location: 'Computer Lab 3 (Bay B)',
     status: 'recording',
     recording: true,
-    alerts: 0,
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-person-typing-on-a-laptop-42930-large.mp4',
+    alerts: 1,
+    malpracticeType: '📚 Unauthorized Paper / Book Reference',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-working-on-her-laptop-in-an-office-42798-large.mp4',
     poster: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=600&q=80',
-    anomalyType: 'none',
+    severity: 'warning',
+    targetLabel: '⚠️ UNAPPROVED BOOK DETECTED [87.9%]',
+    confidence: 87.9,
+    boxPos: { x: 18, y: 50, w: 26, h: 34 },
   },
   {
     id: 'CAM-006',
-    name: 'Lab 3 — Terminal Beta',
-    location: 'Computer Lab 3',
-    status: 'offline',
-    recording: false,
+    name: 'Lab 3 — Normal Invigilation Baseline',
+    location: 'Computer Lab 3 (Bay A)',
+    status: 'recording',
+    recording: true,
     alerts: 0,
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-working-on-her-laptop-in-an-office-42798-large.mp4',
-    poster: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80',
-    anomalyType: 'none',
+    malpracticeType: '✅ Clean Exam Stream',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-students-walking-in-a-university-hallway-4412-large.mp4',
+    poster: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=600&q=80',
+    severity: 'none',
+    targetLabel: '✅ NORMAL MONITORING (99.5%)',
+    confidence: 99.5,
+    boxPos: { x: 35, y: 25, w: 28, h: 50 },
   },
 ];
 
 const initialAnomalies: Anomaly[] = [
   {
-    id: 'ANO-8941',
+    id: 'MAL-9104',
     severity: 'critical',
-    title: 'Unauthorized Mobile Phone Detected',
-    description: 'Object detection model flagged mobile device under desk at Hall B Center Aisle.',
-    camera: 'Hall B — Center Aisle (CAM-003)',
+    title: 'Mobile Phone Cheating In-Progress',
+    malpracticeCategory: 'Device Malpractice',
+    description: 'YOLOv8 detected smartphone held under desk. Candidate STU-2024-88 typing answers.',
+    camera: 'Hall A — Mobile Phone Cheating Zone (CAM-001)',
     studentId: 'STU-2024-88',
-    timestamp: '10:48:22 AM',
-    confidence: 94.8,
+    timestamp: '10:54:12 AM',
+    confidence: 96.4,
   },
   {
-    id: 'ANO-8940',
+    id: 'MAL-9103',
+    severity: 'critical',
+    title: 'Unpermitted Paper / Chit Passing',
+    malpracticeCategory: 'Unauthorized Material',
+    description: 'Object tracking detected paper transfer between Desk #04 and Desk #05.',
+    camera: 'Hall B — Unauthorized Chit Passing (CAM-003)',
+    studentId: 'STU-2024-14',
+    timestamp: '10:51:30 AM',
+    confidence: 93.7,
+  },
+  {
+    id: 'MAL-9102',
     severity: 'warning',
-    title: 'Persistent Off-Angle Head Pose',
-    description: 'Candidate turned head > 60° to the right for 14 consecutive seconds.',
-    camera: 'Hall A — Rear View (CAM-002)',
+    title: 'Persistent Side-Peeking (Neighbor Paper)',
+    malpracticeCategory: 'Gaze / Head Pose Violation',
+    description: 'Head pose estimator flagged 62° left yaw angle towards Desk #23 for > 15s.',
+    camera: 'Hall A — Side Peeking & Paper Copying (CAM-002)',
     studentId: 'STU-2024-42',
-    timestamp: '10:45:09 AM',
-    confidence: 88.3,
+    timestamp: '10:48:05 AM',
+    confidence: 89.1,
   },
   {
-    id: 'ANO-8939',
-    severity: 'warning',
-    title: 'Multiple Face Bounding Boxes in Frame',
-    description: 'Second face detected in background frame near aisle row 3.',
-    camera: 'Hall B — Center Aisle (CAM-003)',
+    id: 'MAL-9101',
+    severity: 'critical',
+    title: 'Proxy Candidate / Secondary Face',
+    malpracticeCategory: 'Identity / Impersonation',
+    description: 'Biometric engine flagged second unauthorized face standing over candidate seat.',
+    camera: 'Hall B — Impersonation & Second Face (CAM-004)',
     studentId: 'STU-2024-91',
-    timestamp: '10:39:50 AM',
-    confidence: 91.2,
+    timestamp: '10:42:19 AM',
+    confidence: 91.5,
   },
   {
-    id: 'ANO-8938',
-    severity: 'info',
-    title: 'Biometric Face Verification Confirmed',
-    description: 'Biometric match score 99.4% confirmed against candidate hall ticket.',
-    camera: 'Lab 3 — Station Alpha (CAM-005)',
-    studentId: 'STU-2024-12',
-    timestamp: '10:30:15 AM',
-    confidence: 99.4,
-    actionTaken: true,
+    id: 'MAL-9100',
+    severity: 'warning',
+    title: 'Hidden Study Book Under Exam Sheet',
+    malpracticeCategory: 'Unauthorized Material',
+    description: 'Bounding box classifier detected textbook pages under exam question paper.',
+    camera: 'Lab 3 — Book & Formula Sheet (CAM-005)',
+    studentId: 'STU-2024-09',
+    timestamp: '10:35:40 AM',
+    confidence: 87.9,
   },
 ];
 
 const mockSnapshots = [
-  { id: 's1', time: '10:48 AM', label: 'Mobile Device Detected — Desk #14', confidence: '94.8%', severity: 'critical', url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80' },
-  { id: 's2', time: '10:45 AM', label: 'Head Pose Warning — Seat #22', confidence: '88.3%', severity: 'warning', url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80' },
-  { id: 's3', time: '10:39 AM', label: 'Secondary Person in Frame', confidence: '91.2%', severity: 'warning', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80' },
-  { id: 's4', time: '10:30 AM', label: 'Identity Verification Success', confidence: '99.4%', severity: 'info', url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&q=80' },
-  { id: 's5', time: '10:15 AM', label: 'Rapid Head Gaze Shift Alert', confidence: '85.1%', severity: 'warning', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=400&q=80' },
+  { id: 's1', time: '10:54 AM', label: 'Mobile Device Bounding Box — Desk #14', confidence: '96.4%', severity: 'critical', url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=80', malpractice: '📱 Phone' },
+  { id: 's2', time: '10:51 AM', label: 'Paper Pass Object Trajectory Flag', confidence: '93.7%', severity: 'critical', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80', malpractice: '📄 Chit Transfer' },
+  { id: 's3', time: '10:48 AM', label: 'Head Pose Gaze Tracking Alert', confidence: '89.1%', severity: 'warning', url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=400&q=80', malpractice: '👀 Side Peeking' },
+  { id: 's4', time: '10:42 AM', label: 'Biometric Proxy Candidate Flag', confidence: '91.5%', severity: 'critical', url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80', malpractice: '👤 Proxy Face' },
+  { id: 's5', time: '10:35 AM', label: 'Hidden Formula Book Frame', confidence: '87.9%', severity: 'warning', url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=400&q=80', malpractice: '📚 Book' },
 ];
 
-/* ── SVG Real-Time AI Detection Overlay ─────────── */
-function AiDetectionOverlay({ feed }: { feed: CameraFeed }) {
-  const isCritical = feed.anomalyType === 'critical';
-  const isWarning = feed.anomalyType === 'warning';
+/* ── Malpractice AI Bounding Box Overlay ──────────── */
+function MalpracticeAiOverlay({ feed }: { feed: CameraFeed }) {
+  const isCritical = feed.severity === 'critical';
+  const isWarning = feed.severity === 'warning';
+  const box = feed.boxPos;
 
   return (
     <svg className="absolute inset-0 h-full w-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
-      {/* Scanning laser line */}
+      {/* Scanning laser beam line */}
       <motion.line
         x1="0"
         y1="0"
         x2="100"
         y2="0"
-        stroke={isCritical ? '#ef4444' : isWarning ? '#eab308' : '#10b981'}
-        strokeWidth="0.5"
-        strokeOpacity="0.7"
+        stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'}
+        strokeWidth="0.6"
+        strokeOpacity="0.8"
         animate={{ y1: [0, 100, 0], y2: [0, 100, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
       />
 
-      {/* Primary Face & Body Bounding Box 1 */}
-      <motion.rect
-        x="22"
-        y="25"
-        width="26"
-        height="48"
-        fill="none"
-        stroke={isWarning ? '#eab308' : '#10b981'}
-        strokeWidth="0.8"
-        strokeDasharray="2 1"
-        animate={{ opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
-      <text x="22" y="22" fill={isWarning ? '#facc15' : '#34d399'} fontSize="2.8" fontFamily="monospace" fontWeight="bold">
-        {isWarning ? '⚠️ STU-42 (HEAD POSE 45° R)' : '✅ STU-01 (VERIFIED 99.2%)'}
-      </text>
-
-      {/* Secondary Bounding Box / Critical Alert Box */}
-      <motion.g animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 1.5, repeat: Infinity }}>
+      {/* Malpractice Target Bounding Box */}
+      <motion.g animate={{ opacity: [0.75, 1, 0.75] }} transition={{ duration: 1.2, repeat: Infinity }}>
+        {/* Fill highlight */}
         <rect
-          x="58"
-          y="32"
-          width="24"
-          height="44"
-          fill={isCritical ? 'rgba(239, 68, 68, 0.15)' : 'none'}
-          stroke={isCritical ? '#ef4444' : '#10b981'}
-          strokeWidth={isCritical ? '1.2' : '0.8'}
+          x={box.x}
+          y={box.y}
+          width={box.w}
+          height={box.h}
+          fill={isCritical ? 'rgba(239, 68, 68, 0.22)' : isWarning ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.1)'}
+          stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'}
+          strokeWidth={isCritical ? '1.5' : '1'}
+          strokeDasharray={isCritical ? 'none' : '3 1.5'}
         />
-        {/* Corner brackets */}
-        <path d="M58 36 L58 32 L62 32" fill="none" stroke={isCritical ? '#ef4444' : '#10b981'} strokeWidth="1.5" />
-        <path d="M78 32 L82 32 L82 36" fill="none" stroke={isCritical ? '#ef4444' : '#10b981'} strokeWidth="1.5" />
-        <path d="M82 72 L82 76 L78 76" fill="none" stroke={isCritical ? '#ef4444' : '#10b981'} strokeWidth="1.5" />
-        <path d="M62 76 L58 76 L58 72" fill="none" stroke={isCritical ? '#ef4444' : '#10b981'} strokeWidth="1.5" />
 
-        <text x="58" y="29" fill={isCritical ? '#f87171' : '#34d399'} fontSize="2.8" fontFamily="monospace" fontWeight="bold">
-          {isCritical ? '🚨 PHONE DETECTED [94.8%]' : '✅ STU-02 (VERIFIED 98.5%)'}
+        {/* Heavy corner brackets */}
+        <path d={`M${box.x} ${box.y + 6} L${box.x} ${box.y} L${box.x + 6} ${box.y}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
+        <path d={`M${box.x + box.w - 6} ${box.y} L${box.x + box.w} ${box.y} L${box.x + box.w} ${box.y + 6}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
+        <path d={`M${box.x + box.w} ${box.y + box.h - 6} L${box.x + box.w} ${box.y + box.h} L${box.x + box.w - 6} ${box.y + box.h}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
+        <path d={`M${box.x + 6} ${box.y + box.h} L${box.x} ${box.y + box.h} L${box.x} ${box.y + box.h - 6}`} fill="none" stroke={isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981'} strokeWidth="2" />
+
+        {/* Tag Banner Header */}
+        <rect
+          x={box.x}
+          y={box.y - 12}
+          width={box.w + 14}
+          height="11"
+          fill={isCritical ? '#dc2626' : isWarning ? '#d97706' : '#059669'}
+          rx="1"
+        />
+        <text
+          x={box.x + 2}
+          y={box.y - 4}
+          fill="#ffffff"
+          fontSize="2.4"
+          fontFamily="monospace"
+          fontWeight="900"
+        >
+          {feed.targetLabel}
         </text>
+
+        {/* Head pose directional arrow line if warning */}
+        {isWarning && (
+          <line
+            x1={box.x + box.w / 2}
+            y1={box.y + 10}
+            x2={box.x - 15}
+            y2={box.y + 10}
+            stroke="#f59e0b"
+            strokeWidth="1.2"
+            strokeDasharray="2 1"
+          />
+        )}
       </motion.g>
 
-      {/* Small phone target box if critical */}
-      {isCritical && (
-        <motion.rect
-          x="66"
-          y="62"
-          width="8"
-          height="12"
-          fill="rgba(239, 68, 68, 0.4)"
-          stroke="#ef4444"
-          strokeWidth="1"
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
-        />
-      )}
+      {/* Watermark telemetry line */}
+      <text x="3" y="97" fill="rgba(255,255,255,0.7)" fontSize="2.2" fontFamily="monospace">
+        AI MONITORING STREAM • MALPRACTICE ENGINE V4 • CONF: {feed.confidence}%
+      </text>
     </svg>
   );
 }
@@ -242,11 +292,12 @@ export default function LiveMonitoring() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [filterSeverity, setFilterSeverity] = useState<'all' | 'critical' | 'warning'>('all');
+  const [triggerNotification, setTriggerNotification] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const onlineCount = cameraFeeds.filter((f) => f.status !== 'offline').length;
-  const activeAlertsCount = anomalies.filter((a) => !a.actionTaken).length;
+  const criticalCount = anomalies.filter((a) => a.severity === 'critical' && !a.actionTaken).length;
 
   const handleActionTaken = (id: string) => {
     setAnomalies((prev) =>
@@ -265,6 +316,71 @@ export default function LiveMonitoring() {
     }
   };
 
+  const simulateMalpractice = (type: 'phone' | 'gaze' | 'chit' | 'proxy') => {
+    const newId = `MAL-${Math.floor(1000 + Math.random() * 9000)}`;
+    let newAnomaly: Anomaly;
+
+    if (type === 'phone') {
+      newAnomaly = {
+        id: newId,
+        severity: 'critical',
+        title: 'LIVE SIMULATION: Mobile Phone Detected',
+        malpracticeCategory: 'Device Cheating',
+        description: 'Candidate detected retrieving smartphone from pocket under exam table.',
+        camera: selectedFeed.name,
+        studentId: 'STU-SIM-99',
+        timestamp: new Date().toLocaleTimeString(),
+        confidence: 97.2,
+      };
+      setTriggerNotification('🚨 CRITICAL MALPRACTICE TRIGGERED: Mobile Phone Detected!');
+    } else if (type === 'gaze') {
+      newAnomaly = {
+        id: newId,
+        severity: 'warning',
+        title: 'LIVE SIMULATION: Side Gaze Violation',
+        malpracticeCategory: 'Head Pose Peeking',
+        description: 'Candidate gaze fixed on neighbor student exam paper for > 10 seconds.',
+        camera: selectedFeed.name,
+        studentId: 'STU-SIM-77',
+        timestamp: new Date().toLocaleTimeString(),
+        confidence: 91.4,
+      };
+      setTriggerNotification('⚠️ WARNING MALPRACTICE TRIGGERED: Side Peeking Detected!');
+    } else if (type === 'chit') {
+      newAnomaly = {
+        id: newId,
+        severity: 'critical',
+        title: 'LIVE SIMULATION: Paper Chit Passing',
+        malpracticeCategory: 'Material Transfer',
+        description: 'Object trajectory tracker detected paper note passed between desks.',
+        camera: selectedFeed.name,
+        studentId: 'STU-SIM-55',
+        timestamp: new Date().toLocaleTimeString(),
+        confidence: 95.8,
+      };
+      setTriggerNotification('🚨 CRITICAL MALPRACTICE TRIGGERED: Cheat Sheet Passing!');
+    } else {
+      newAnomaly = {
+        id: newId,
+        severity: 'critical',
+        title: 'LIVE SIMULATION: Impersonator Proxy Face',
+        malpracticeCategory: 'Identity Fraud',
+        description: 'Second face detected in frame. Candidate roster mismatch flagged.',
+        camera: selectedFeed.name,
+        studentId: 'STU-SIM-33',
+        timestamp: new Date().toLocaleTimeString(),
+        confidence: 98.1,
+      };
+      setTriggerNotification('🚨 CRITICAL MALPRACTICE TRIGGERED: Proxy Face Detected!');
+    }
+
+    setAnomalies((prev) => [newAnomaly, ...prev]);
+
+    setTimeout(() => {
+      setTriggerNotification(null);
+    }, 4000);
+  };
+
   const filteredAnomalies = anomalies.filter((a) =>
     filterSeverity === 'all' ? true : a.severity === filterSeverity
   );
@@ -272,32 +388,92 @@ export default function LiveMonitoring() {
   return (
     <div className="space-y-6 font-sans select-none">
       <PageHeader
-        title="Live Surveillance & AI Anomaly Stream"
-        description="Real-time exam room stock video streams, AI face & phone tracking overlays, live telemetry"
-        breadcrumb={[{ label: 'Live Monitoring' }]}
+        title="AI Exam Malpractice Detection & Live Surveillance"
+        description="Real-time exam cheating detection — Phone usage, paper copying, chit passing, & impersonation"
+        breadcrumb={[{ label: 'Live Malpractice Surveillance' }]}
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant="success" dot>{onlineCount}/{cameraFeeds.length} Active Feeds</Badge>
-            <Badge variant="warning">{activeAlertsCount} Unresolved Flags</Badge>
+            <Badge variant="danger" dot>{criticalCount} Critical Cheating Alerts</Badge>
+            <Badge variant="success">{onlineCount}/{cameraFeeds.length} Feeds Online</Badge>
             <Button
               variant="secondary"
               size="sm"
               leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
               onClick={() => setAnomalies(initialAnomalies)}
             >
-              Reset Stream
+              Reset Feeds
             </Button>
           </div>
         }
       />
 
+      {/* Simulated Malpractice Alert Banner */}
+      <AnimatePresence>
+        {triggerNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-2xl bg-red-600 text-white p-4 font-bold flex items-center justify-between shadow-lg"
+          >
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 text-white animate-bounce" />
+              <span>{triggerNotification}</span>
+            </div>
+            <span className="text-xs font-mono bg-black/30 px-3 py-1 rounded-full">INSTANT AI FLAG</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Live Malpractice Simulator Trigger Bar */}
+      <Card className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white border border-emerald-500/30 shadow-lg">
+        <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-white">Live Exam Malpractice Simulator</p>
+              <p className="text-xs text-emerald-300/80">Click any trigger button below to simulate real-time cheating detection</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => simulateMalpractice('phone')}
+              className="flex items-center gap-1.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
+            >
+              <Smartphone className="h-3.5 w-3.5" /> Simulate Phone Cheating
+            </button>
+            <button
+              onClick={() => simulateMalpractice('gaze')}
+              className="flex items-center gap-1.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
+            >
+              <Eye className="h-3.5 w-3.5" /> Simulate Side Peeking
+            </button>
+            <button
+              onClick={() => simulateMalpractice('chit')}
+              className="flex items-center gap-1.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
+            >
+              <FileText className="h-3.5 w-3.5" /> Simulate Chit Passing
+            </button>
+            <button
+              onClick={() => simulateMalpractice('proxy')}
+              className="flex items-center gap-1.5 rounded-xl bg-purple-600/90 hover:bg-purple-600 text-white px-3 py-2 text-xs font-bold transition-all shadow-xs"
+            >
+              <UserX className="h-3.5 w-3.5" /> Simulate Proxy Candidate
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Stock Video Feed Viewer */}
-        <Card className="lg:col-span-2 overflow-hidden shadow-lg">
+        <Card className="lg:col-span-2 overflow-hidden shadow-lg border-olive/20 dark:border-slate-800">
           <CardContent className="p-0">
             <div className={`aspect-video w-full bg-slate-950 relative overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen w-screen' : 'rounded-t-2xl'}`}>
 
-              {/* Real HTML5 Stock MP4 Video Stream */}
+              {/* Real Stock Video Stream */}
               {selectedFeed.status === 'offline' ? (
                 <div className="flex h-full w-full flex-col items-center justify-center bg-slate-900 text-slate-400 p-6 text-center">
                   <Video className="h-16 w-16 mb-3 opacity-30" />
@@ -318,30 +494,27 @@ export default function LiveMonitoring() {
                 />
               )}
 
-              {/* Real-Time AI Detection Overlay */}
-              {selectedFeed.status !== 'offline' && <AiDetectionOverlay feed={selectedFeed} />}
+              {/* Malpractice AI Bounding Box Overlay */}
+              {selectedFeed.status !== 'offline' && <MalpracticeAiOverlay feed={selectedFeed} />}
 
-              {/* Header Badge Overlay */}
-              <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
+              {/* Malpractice Alert Badge Banner Overlay */}
+              <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2 z-20">
                 <Badge
-                  variant={selectedFeed.status === 'offline' ? 'danger' : 'success'}
-                  className="bg-slate-900/90 text-white border border-white/10 backdrop-blur-md px-3 py-1 font-mono text-xs shadow-md"
+                  variant={selectedFeed.severity === 'critical' ? 'danger' : selectedFeed.severity === 'warning' ? 'warning' : 'success'}
+                  className="bg-slate-900/90 text-white border border-white/10 backdrop-blur-md px-3 py-1 font-mono text-xs shadow-md font-extrabold"
                   dot
                 >
-                  {selectedFeed.status.toUpperCase()}
+                  {selectedFeed.malpracticeType}
                 </Badge>
                 {selectedFeed.recording && (
                   <span className="flex items-center gap-1.5 rounded-full bg-red-600/90 backdrop-blur-md px-3 py-1 text-xs font-mono font-bold text-white shadow-md">
                     <Circle className="h-2 w-2 fill-white animate-pulse-dot" />
-                    LIVE REC
+                    MALPRACTICE MONITORING
                   </span>
                 )}
-                <span className="rounded-full bg-black/70 backdrop-blur-md text-white/90 px-3 py-1 text-xs font-mono border border-white/10 hidden sm:inline-block">
-                  {selectedFeed.name}
-                </span>
               </div>
 
-              {/* Video Player Action Overlay */}
+              {/* Player Overlay Controls */}
               <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
                 <button
                   onClick={togglePlay}
@@ -366,47 +539,47 @@ export default function LiveMonitoring() {
                 </button>
               </div>
 
-              {/* Bottom Telemetry Overlay */}
+              {/* Bottom Malpractice Telemetry Overlay */}
               <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-20">
-                <div className="flex items-center gap-3 rounded-xl bg-black/80 backdrop-blur-md px-3.5 py-1.5 border border-white/10 text-xs font-mono text-white/90 shadow-md">
+                <div className="flex items-center gap-3 rounded-xl bg-black/85 backdrop-blur-md px-3.5 py-1.5 border border-white/10 text-xs font-mono text-white/90 shadow-md">
                   <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                    <Scan className="h-3.5 w-3.5" /> YOLOv8 Live Overlay
+                    <Scan className="h-3.5 w-3.5" /> YOLOv8-Malpractice Engine
                   </span>
                   <span className="text-white/30">|</span>
                   <span>FPS: <strong className="text-emerald-300">29.8</strong></span>
                   <span className="text-white/30 hidden sm:inline">|</span>
-                  <span className="hidden sm:inline">Latency: <strong className="text-white">12ms</strong></span>
+                  <span className="hidden sm:inline">Target: <strong className="text-amber-300">{selectedFeed.id}</strong></span>
                 </div>
-                <div className="text-xs font-mono text-white/80 bg-black/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 shadow-md">
+                <div className="text-xs font-mono text-white/80 bg-black/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 shadow-md">
                   {new Date().toLocaleTimeString()}
                 </div>
               </div>
             </div>
 
-            {/* Video Controls Bar */}
+            {/* Video Action Controls Bar */}
             <div className="flex flex-wrap items-center justify-between border-t border-olive/10 dark:border-slate-800 p-4 gap-3">
               <div className="flex items-center gap-2">
                 <Button size="sm" leftIcon={<Camera className="h-4 w-4" />}>
-                  Capture Snapshot
+                  Save Malpractice Evidence Frame
                 </Button>
-                <Button variant="secondary" size="sm" leftIcon={<ShieldAlert className="h-4 w-4 text-amber-500" />}>
-                  Flag Invigilator
+                <Button variant="secondary" size="sm" leftIcon={<ShieldAlert className="h-4 w-4 text-red-500" />}>
+                  Alert Flying Squad
                 </Button>
               </div>
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <Cpu className="h-4 w-4 text-primary dark:text-emerald-400" />
-                <span>Detection: <strong className="text-emerald-600 dark:text-emerald-400">YOLOv8 + ResNet HeadPose</strong></span>
+                <span>Detection: <strong className="text-emerald-600 dark:text-emerald-400">YOLOv8-ExamCheating + GazePose</strong></span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Live Anomaly Telemetry List */}
-        <Card className="flex flex-col shadow-lg">
+        {/* Live Malpractice Incident Log */}
+        <Card className="flex flex-col shadow-lg border-olive/20 dark:border-slate-800">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Real-Time Anomalies
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Detected Malpractice Stream
             </CardTitle>
             <div className="flex gap-1">
               {(['all', 'critical', 'warning'] as const).map((sev) => (
@@ -466,6 +639,10 @@ export default function LiveMonitoring() {
                     </Badge>
                   </div>
 
+                  <span className="inline-block px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {anomaly.malpracticeCategory}
+                  </span>
+
                   <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 leading-snug">
                     {anomaly.title}
                   </h4>
@@ -482,9 +659,9 @@ export default function LiveMonitoring() {
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => handleActionTaken(anomaly.id)}
-                        className="flex-1 rounded-xl bg-primary dark:bg-emerald-800 text-white py-1.5 text-xs font-bold hover:bg-primary-hover transition-colors shadow-xs"
+                        className="flex-1 rounded-xl bg-red-600 dark:bg-red-800 text-white py-1.5 text-xs font-bold hover:bg-red-700 transition-colors shadow-xs"
                       >
-                        Acknowledge Alert
+                        Acknowledge & Escalate
                       </button>
                       <button
                         onClick={() => handleActionTaken(anomaly.id)}
@@ -501,14 +678,14 @@ export default function LiveMonitoring() {
         </Card>
       </div>
 
-      {/* AI Flagged Snapshots Timeline Carousel */}
-      <Card className="shadow-lg">
+      {/* Flagged AI Malpractice Snapshots Carousel */}
+      <Card className="shadow-lg border-olive/20 dark:border-slate-800">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Image className="h-5 w-5 text-primary dark:text-emerald-400" />
-            AI Flagged Snapshots & Frame Highlights
+            Flagged Malpractice Evidence Frames & Bounding Snapshots
           </CardTitle>
-          <span className="text-xs font-mono text-slate-400">Stock Frame Captures</span>
+          <span className="text-xs font-mono text-slate-400">Captured Evidence Clips</span>
         </CardHeader>
         <CardContent>
           <Carousel>
@@ -524,6 +701,9 @@ export default function LiveMonitoring() {
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <span className="absolute top-2 left-2 rounded-md bg-red-600/90 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-mono font-bold text-white">
+                    {snap.malpractice}
+                  </span>
                   <span className="absolute top-2 right-2 rounded-md bg-black/80 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-mono text-white border border-white/10">
                     {snap.time}
                   </span>
@@ -552,14 +732,14 @@ export default function LiveMonitoring() {
         </CardContent>
       </Card>
 
-      {/* Real Stock Video Camera Roster Switcher */}
-      <Card className="shadow-lg">
+      {/* Malpractice Camera Channels Roster */}
+      <Card className="shadow-lg border-olive/20 dark:border-slate-800">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Camera className="h-5 w-5 text-primary dark:text-emerald-400" />
-            Stock Video Camera Roster & Channel Switcher
+            Malpractice Monitoring Channels (6 Camera Nodes)
           </CardTitle>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{cameraFeeds.length} Real Stock Channels</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{cameraFeeds.length} Configured Nodes</span>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -575,37 +755,30 @@ export default function LiveMonitoring() {
                   }`}
                 >
                   <div className="aspect-video w-full rounded-t-2xl bg-slate-950 relative overflow-hidden">
-                    {feed.status === 'offline' ? (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-900 text-slate-500">
-                        <Video className="h-8 w-8 opacity-30" />
-                      </div>
-                    ) : (
-                      <img
-                        src={feed.poster}
-                        alt={feed.name}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    )}
+                    <img
+                      src={feed.poster}
+                      alt={feed.name}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
                     <div className="absolute top-2 left-2 z-10">
-                      {feed.status === 'recording' && (
-                        <span className="flex items-center gap-1 rounded-full bg-red-600/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-mono font-bold text-white">
-                          <Circle className="h-1.5 w-1.5 fill-white animate-pulse-dot" />
-                          REC
-                        </span>
-                      )}
-                      {feed.status === 'offline' && (
-                        <span className="rounded-full bg-slate-700/90 backdrop-blur-md px-2 py-0.5 text-[10px] font-mono font-bold text-white">
-                          OFFLINE
-                        </span>
-                      )}
+                      <span className="flex items-center gap-1 rounded-full bg-red-600/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-mono font-bold text-white">
+                        <Circle className="h-1.5 w-1.5 fill-white animate-pulse-dot" />
+                        REC
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-2 left-2 z-10">
+                      <span className="text-[10px] font-bold text-amber-300 bg-black/70 px-2 py-0.5 rounded-md">
+                        {feed.malpracticeType}
+                      </span>
                     </div>
 
                     {feed.alerts > 0 && (
                       <div className="absolute top-2 right-2 z-10">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-extrabold text-white shadow-xs">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-extrabold text-white shadow-xs animate-pulse">
                           {feed.alerts}
                         </span>
                       </div>
@@ -616,10 +789,10 @@ export default function LiveMonitoring() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-mono font-bold text-slate-400">{feed.id}</span>
                       <Badge
-                        variant={feed.status === 'offline' ? 'danger' : feed.status === 'recording' ? 'success' : 'default'}
+                        variant={feed.severity === 'critical' ? 'danger' : feed.severity === 'warning' ? 'warning' : 'success'}
                         className="text-[10px] px-1.5 py-0 uppercase font-bold"
                       >
-                        {feed.status}
+                        {feed.severity.toUpperCase()}
                       </Badge>
                     </div>
                     <p className="text-xs font-extrabold text-slate-900 dark:text-slate-100 truncate">{feed.name}</p>
