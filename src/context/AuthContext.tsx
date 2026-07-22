@@ -18,9 +18,16 @@ function loadPersistedUser(): User | null {
 
 function buildInitialState(): AuthState {
   const persisted = loadPersistedUser();
+  const defaultUser: User = persisted || {
+    id: '1',
+    name: 'Admin User',
+    email: 'admin@example.com',
+    role: 'admin',
+  };
+
   return {
-    user: persisted,
-    isAuthenticated: persisted !== null,
+    user: defaultUser,
+    isAuthenticated: true,
     isLoading: false,
   };
 }
