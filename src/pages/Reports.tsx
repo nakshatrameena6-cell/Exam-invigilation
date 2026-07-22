@@ -125,10 +125,10 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       <PageHeader
         title="Examination Reports & Analytics"
-        description="View and download comprehensive AI-generated proctoring logs, attendance records, and anomaly audits."
+        description="View and download comprehensive SecureX AI-generated proctoring logs and anomaly audits."
         breadcrumb={[{ label: 'Reports' }]}
         actions={
           <Button variant="secondary" size="sm" leftIcon={<Download className="h-4 w-4" />}>
@@ -139,47 +139,47 @@ export default function Reports() {
 
       {/* Summary Spotlight KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <SpotlightCard>
+        <div className="rounded-2xl border border-emerald-500/30 bg-white dark:bg-slate-900 p-5 shadow-glow transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Total Reports
               </p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{mockReports.length}</p>
+              <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mt-1">{mockReports.length}</p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-secondary-bg dark:bg-slate-800 flex items-center justify-center text-primary dark:text-emerald-400">
-              <FileText className="h-5 w-5" />
+            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+              <FileText className="h-6 w-6 text-emerald-500" />
             </div>
           </div>
-        </SpotlightCard>
+        </div>
 
-        <SpotlightCard>
+        <div className="rounded-2xl border border-amber-500/30 bg-white dark:bg-slate-900 p-5 shadow-glow-gold transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Anomalies Flagged
               </p>
-              <p className="text-2xl font-bold text-highlight dark:text-amber-400 mt-1">6 Events</p>
+              <p className="text-3xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">6 Events</p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-warning/10 dark:bg-amber-950/40 flex items-center justify-center text-highlight dark:text-amber-400">
-              <AlertTriangle className="h-5 w-5" />
+            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <AlertTriangle className="h-6 w-6 text-amber-500" />
             </div>
           </div>
-        </SpotlightCard>
+        </div>
 
-        <SpotlightCard>
+        <div className="rounded-2xl border border-purple-500/30 bg-white dark:bg-slate-900 p-5 shadow-glow-purple transition-all hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Integrity Index
               </p>
-              <p className="text-2xl font-bold text-success dark:text-emerald-400 mt-1">98.8% Clear</p>
+              <p className="text-3xl font-extrabold text-purple-600 dark:text-purple-400 mt-1">98.8% Clear</p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-success/10 dark:bg-emerald-950/40 flex items-center justify-center text-success dark:text-emerald-400">
-              <ShieldCheck className="h-5 w-5" />
+            <div className="h-12 w-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6 text-purple-500" />
             </div>
           </div>
-        </SpotlightCard>
+        </div>
       </div>
 
       {/* Main Reports Table */}

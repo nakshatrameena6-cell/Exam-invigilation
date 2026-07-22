@@ -7,10 +7,13 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import {
   Monitor, Camera, AlertTriangle, CheckCircle, TrendingUp,
-  ArrowRight, Clock, Activity,
+  ArrowRight, Clock, Activity, Cpu, ShieldCheck, Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import Dock from '../components/reactbits/Dock';
+import RBCarousel from '../components/reactbits/RBCarousel';
+import { Video, Upload, BarChart3, HelpCircle, Info, User, FileText, Eye, Shield } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -30,10 +33,50 @@ export default function Home() {
   const { user } = useAuth();
 
   const stats = [
-    { title: 'Active Exams', value: '12', icon: Monitor, change: '+2 today', trend: 'up', color: 'text-primary dark:text-emerald-400', bgColor: 'bg-primary/5 dark:bg-emerald-950/40' },
-    { title: 'Cameras Online', value: '48', icon: Camera, change: '96% uptime', trend: 'up', color: 'text-success dark:text-emerald-400', bgColor: 'bg-success/5 dark:bg-emerald-950/40' },
-    { title: 'Alerts Today', value: '3', icon: AlertTriangle, change: '2 resolved', trend: 'down', color: 'text-highlight dark:text-amber-400', bgColor: 'bg-warning/5 dark:bg-amber-950/40' },
-    { title: 'Success Rate', value: '99.4%', icon: TrendingUp, change: '+0.2% this week', trend: 'up', color: 'text-success dark:text-emerald-400', bgColor: 'bg-success/5 dark:bg-emerald-950/40' },
+    {
+      title: 'Active Exams',
+      value: '12',
+      icon: Monitor,
+      change: '+2 today',
+      trend: 'up',
+      textColor: 'text-emerald-600 dark:text-emerald-400',
+      bgColor: 'bg-emerald-500/10 dark:bg-emerald-950/50',
+      borderColor: 'border-emerald-500/30',
+      shadowGlow: 'shadow-glow',
+    },
+    {
+      title: 'Cameras Online',
+      value: '48',
+      icon: Camera,
+      change: '96% uptime',
+      trend: 'up',
+      textColor: 'text-cyan-600 dark:text-cyan-400',
+      bgColor: 'bg-cyan-500/10 dark:bg-cyan-950/50',
+      borderColor: 'border-cyan-500/30',
+      shadowGlow: 'shadow-glow-cyan',
+    },
+    {
+      title: 'Alerts Today',
+      value: '3',
+      icon: AlertTriangle,
+      change: '2 resolved',
+      trend: 'down',
+      textColor: 'text-amber-600 dark:text-amber-400',
+      bgColor: 'bg-amber-500/10 dark:bg-amber-950/50',
+      borderColor: 'border-amber-500/30',
+      shadowGlow: 'shadow-glow-gold',
+    },
+    {
+      title: 'Success Rate',
+      value: '99.4%',
+      icon: TrendingUp,
+      change: '+0.2% this week',
+      trend: 'up',
+      textColor: 'text-purple-600 dark:text-purple-400',
+      bgColor: 'bg-purple-500/10 dark:bg-purple-950/50',
+      borderColor: 'border-purple-500/30',
+      shadowGlow: 'shadow-glow-purple',
+    },
   ];
 
   const recentExams = [
@@ -44,14 +87,14 @@ export default function Home() {
   ];
 
   const recentActivity = [
-    { id: 1, message: 'Anomaly detected in Hall B', time: '2 min ago', type: 'warning' as const },
-    { id: 2, message: 'Camera CAM-006 reconnected', time: '15 min ago', type: 'success' as const },
-    { id: 3, message: 'Report generated for CS101', time: '30 min ago', type: 'info' as const },
-    { id: 4, message: 'New exam scheduled: BIO101', time: '1 hr ago', type: 'default' as const },
+    { id: 1, message: 'Malpractice flag logged in Hall B', time: '2 min ago', type: 'warning' as const, category: 'ALERTS' },
+    { id: 2, message: 'Camera CAM-006 reconnected', time: '15 min ago', type: 'success' as const, category: 'SYSTEM' },
+    { id: 3, message: 'Audit report compiled for CS101', time: '30 min ago', type: 'info' as const, category: 'REPORTS' },
+    { id: 4, message: 'New session scheduled: BIO101', time: '1 hr ago', type: 'default' as const, category: 'SCHEDULE' },
   ];
 
   const getStatusBadge = (status: string) => {
-    if (status === 'active') return <Badge variant="success" dot>Active</Badge>;
+    if (status === 'active') return <Badge variant="success" dot>Active Session</Badge>;
     return <Badge variant="info">Completed</Badge>;
   };
 
@@ -64,7 +107,7 @@ export default function Home() {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-6 font-sans"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -85,30 +128,33 @@ export default function Home() {
         />
       </motion.div>
 
-      {/* Spotlight KPI Stats grid */}
+      {/* Color-coded KPI Stats Grid */}
       <motion.div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" variants={itemVariants}>
         {stats.map((stat) => {
           const StatIcon = stat.icon;
           return (
-            <SpotlightCard key={stat.title}>
+            <div
+              key={stat.title}
+              className={`rounded-2xl border ${stat.borderColor} bg-white dark:bg-slate-900 p-5 transition-all duration-300 hover:-translate-y-1 ${stat.shadowGlow}`}
+            >
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.title}</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stat.value}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{stat.title}</p>
+                  <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{stat.value}</p>
                 </div>
-                <div className={`rounded-xl p-2.5 ${stat.bgColor}`}>
-                  <StatIcon className={`h-5 w-5 ${stat.color}`} />
+                <div className={`rounded-xl p-3 ${stat.bgColor}`}>
+                  <StatIcon className={`h-6 w-6 ${stat.textColor}`} />
                 </div>
               </div>
-              <div className="mt-3 flex items-center gap-1 text-xs">
+              <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold">
                 {stat.trend === 'up' ? (
-                  <TrendingUp className="h-3 w-3 text-success dark:text-emerald-400" />
+                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <TrendingUp className="h-3 w-3 text-slate-400 rotate-180" />
+                  <TrendingUp className="h-3.5 w-3.5 text-amber-500 rotate-180" />
                 )}
                 <span className="text-slate-500 dark:text-slate-400">{stat.change}</span>
               </div>
-            </SpotlightCard>
+            </div>
           );
         })}
       </motion.div>
@@ -116,54 +162,57 @@ export default function Home() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Active Examinations table */}
         <motion.div className="lg:col-span-2" variants={itemVariants}>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Active Examinations</CardTitle>
+          <Card className="border-emerald-500/20">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
+              <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+                <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                Active Examination Sessions
+              </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
                 onClick={() => navigate('/live-monitoring')}
               >
-                View all
+                View all feeds
               </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-olive/10 dark:border-slate-800">
-                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Exam</th>
-                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Location</th>
-                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 hidden sm:table-cell">Time</th>
-                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Cameras</th>
-                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Alerts</th>
-                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Status</th>
+                    <tr className="border-b border-slate-200/60 dark:border-slate-800 text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                      <th className="pb-3">Course / Exam</th>
+                      <th className="pb-3">Hall Location</th>
+                      <th className="pb-3 hidden sm:table-cell">Start Time</th>
+                      <th className="pb-3">Cameras</th>
+                      <th className="pb-3">Alerts</th>
+                      <th className="pb-3">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-olive/10 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                     {recentExams.map((exam) => (
-                      <tr key={exam.id} className="group hover:bg-secondary-bg/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="py-3.5 font-medium text-slate-900 dark:text-slate-100">{exam.name}</td>
-                        <td className="py-3.5 text-slate-600 dark:text-slate-300">{exam.location}</td>
-                        <td className="py-3.5 text-slate-500 dark:text-slate-400 hidden sm:table-cell">
+                      <tr key={exam.id} className="group hover:bg-emerald-50/30 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="py-4 font-bold text-slate-900 dark:text-slate-100">{exam.name}</td>
+                        <td className="py-4 text-slate-600 dark:text-slate-300 font-medium">{exam.location}</td>
+                        <td className="py-4 text-slate-500 dark:text-slate-400 hidden sm:table-cell font-mono text-xs">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" /> {exam.time}
                           </span>
                         </td>
-                        <td className="py-3.5 text-slate-600 dark:text-slate-300">{exam.cameras}</td>
-                        <td className="py-3.5">
+                        <td className="py-4 font-mono font-bold text-cyan-600 dark:text-cyan-400">{exam.cameras} Channels</td>
+                        <td className="py-4">
                           {exam.alerts > 0 ? (
-                            <span className="flex items-center gap-1 text-highlight dark:text-amber-400 font-medium">
-                              <AlertTriangle className="h-4 w-4" /> {exam.alerts}
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20">
+                              <AlertTriangle className="h-3.5 w-3.5" /> {exam.alerts} Flagged
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 text-success dark:text-emerald-400">
-                              <CheckCircle className="h-4 w-4" /> 0
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                              <CheckCircle className="h-3.5 w-3.5" /> Clean
                             </span>
                           )}
                         </td>
-                        <td className="py-3.5">{getStatusBadge(exam.status)}</td>
+                        <td className="py-4">{getStatusBadge(exam.status)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -175,26 +224,24 @@ export default function Home() {
 
         {/* Activity Feed + System Health */}
         <motion.div className="space-y-6" variants={itemVariants}>
-          {/* Recent Activity with AnimatedList */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary dark:text-emerald-400" />
-                Recent Activity
+          {/* Recent Activity */}
+          <Card className="border-cyan-500/20">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+                <Activity className="h-5 w-5 text-cyan-500" />
+                Live Incident Telemetry Stream
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <AnimatedList>
                 {recentActivity.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 p-1">
-                    <div className="mt-1">
-                      <Badge variant={item.type} dot className="border-0 bg-transparent px-0 py-0">
-                        <span className="sr-only">{item.type}</span>
-                      </Badge>
-                    </div>
+                  <div key={item.id} className="flex items-start gap-3 p-2 rounded-xl hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors">
+                    <span className="mt-0.5 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                      {item.category}
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-snug">{item.message}</p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{item.time}</p>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">{item.message}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">{item.time}</p>
                     </div>
                   </div>
                 ))}
@@ -203,27 +250,30 @@ export default function Home() {
           </Card>
 
           {/* System Health */}
-          <Card>
-            <CardHeader>
-              <CardTitle>System Health</CardTitle>
+          <Card className="border-purple-500/20">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+                <Cpu className="h-5 w-5 text-purple-500" />
+                Engine & Server Health
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-4 space-y-4">
               {[
-                { label: 'Server Load', value: 32, color: 'bg-success' },
-                { label: 'Storage', value: 68, color: 'bg-warning' },
-                { label: 'AI Model', value: 100, color: 'bg-primary dark:bg-emerald-500', statusText: 'Online' },
-                { label: 'Network', value: 94, color: 'bg-success', statusText: 'Stable' },
+                { label: 'YOLOv8 Engine Load', value: 32, color: 'bg-emerald-500', barGlow: 'shadow-emerald-500/50' },
+                { label: 'NVMe Storage', value: 68, color: 'bg-amber-500', barGlow: 'shadow-amber-500/50' },
+                { label: 'MediaPipe FaceEngine', value: 100, color: 'bg-purple-500', statusText: 'Active' },
+                { label: 'CCTV Stream Pipeline', value: 94, color: 'bg-cyan-500', statusText: 'Optimal (12ms)' },
               ].map((item) => (
-                <div key={item.label} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
+                <div key={item.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-bold">
                     <span className="text-slate-600 dark:text-slate-400">{item.label}</span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="font-mono text-slate-900 dark:text-slate-100">
                       {item.statusText || `${item.value}%`}
                     </span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-secondary-bg dark:bg-slate-800 overflow-hidden">
+                  <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden p-0.5">
                     <motion.div
-                      className={`h-1.5 rounded-full ${item.color}`}
+                      className={`h-full rounded-full ${item.color}`}
                       initial={{ width: 0 }}
                       animate={{ width: `${item.value}%` }}
                       transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
@@ -235,6 +285,51 @@ export default function Home() {
           </Card>
         </motion.div>
       </div>
+
+      {/* ReactBits RBCarousel — Quick Action Cards */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-amber-500/20 shadow-lg">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+              <Zap className="h-5 w-5 text-amber-500" />
+              SecureX Feature Highlights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-5 pb-4">
+            <RBCarousel
+              items={[
+                { id: 1, title: 'Live AI Monitoring', description: 'Real-time bounding box tracking with YOLOv8 & MediaPipe.', icon: <Eye className="h-4 w-4 text-white" /> },
+                { id: 2, title: 'Talking Detection', description: 'Back-row talking flagged instantly with 96.8% confidence.', icon: <Shield className="h-4 w-4 text-white" /> },
+                { id: 3, title: 'Video Upload & Analysis', description: 'Upload offline CCTV footage for async AI anomaly scans.', icon: <Upload className="h-4 w-4 text-white" /> },
+                { id: 4, title: 'Smart Audit Reports', description: 'Auto-generated malpractice audit logs with evidence frames.', icon: <FileText className="h-4 w-4 text-white" /> },
+                { id: 5, title: 'Head Pose & Gaze', description: '3D head pose estimation with yaw/pitch violation flags.', icon: <Monitor className="h-4 w-4 text-white" /> },
+              ]}
+              baseWidth={260}
+              autoplay
+              autoplayDelay={4000}
+              pauseOnHover
+              loop
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ReactBits Dock — Quick Navigation */}
+      <motion.div variants={itemVariants} className="flex justify-center">
+        <Dock
+          items={[
+            { icon: <Monitor className="h-5 w-5 text-emerald-500" />, label: 'Dashboard', onClick: () => navigate('/'), color: '#10b981' },
+            { icon: <Video className="h-5 w-5 text-cyan-500" />, label: 'Live Monitoring', onClick: () => navigate('/live-monitoring'), color: '#06b6d4' },
+            { icon: <Upload className="h-5 w-5 text-purple-500" />, label: 'Upload Video', onClick: () => navigate('/upload-video'), color: '#8b5cf6' },
+            { icon: <BarChart3 className="h-5 w-5 text-amber-500" />, label: 'Reports', onClick: () => navigate('/reports'), color: '#f59e0b' },
+            { icon: <HelpCircle className="h-5 w-5 text-rose-500" />, label: 'FAQ', onClick: () => navigate('/faq'), color: '#f43f5e' },
+            { icon: <Info className="h-5 w-5 text-blue-500" />, label: 'About', onClick: () => navigate('/about'), color: '#3b82f6' },
+            { icon: <User className="h-5 w-5 text-indigo-500" />, label: 'Profile', onClick: () => navigate('/profile'), color: '#6366f1' },
+          ]}
+          magnification={70}
+          baseItemSize={48}
+        />
+      </motion.div>
     </motion.div>
   );
 }

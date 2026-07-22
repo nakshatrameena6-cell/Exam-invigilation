@@ -4,15 +4,15 @@
 
 @layer base {
   :root {
-    --color-primary: #014502;
-    --color-secondary-bg: #EEFFF2;
-    --color-secondary-accent: #99E200;
-    --color-warning: #FFF100;
-    --color-hover: #FFDF25;
-    --color-olive: #A9C667;
-    --color-highlight: #7B540E;
-    --color-info: #5FA3D8;
-    --color-success: #3BB54A;
+    --color-primary: #059669;
+    --color-secondary-bg: #f0fdf4;
+    --color-secondary-accent: #10b981;
+    --color-warning: #f59e0b;
+    --color-hover: #fbbf24;
+    --color-olive: #10b981;
+    --color-highlight: #b45309;
+    --color-info: #3b82f6;
+    --color-success: #10b981;
   }
 
   html {
@@ -23,13 +23,13 @@
   }
 
   body {
-    @apply bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200;
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200;
   }
 
-  /* Target headings with GradeMIND's elegant serif font style */
+  /* Headings */
   h1, h2, h3, .font-serif-header {
-    font-family: 'Playfair Display', Georgia, ui-serif, serif;
-    @apply tracking-tight;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    @apply tracking-tight font-extrabold;
   }
 
   /* Custom scrollbar */
@@ -43,41 +43,41 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-olive/30 dark:bg-slate-700 rounded-full;
+    @apply bg-emerald-500/30 dark:bg-slate-700 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-olive/50 dark:bg-slate-600;
+    @apply bg-emerald-500/60 dark:bg-slate-600;
   }
 
   *:focus-visible {
-    @apply outline-none ring-2 ring-olive ring-offset-2 dark:ring-offset-slate-900;
+    @apply outline-none ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-slate-900;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-primary-hover dark:bg-emerald-800 dark:hover:bg-emerald-700 shadow-sm;
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 text-sm font-bold text-white transition-all hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-emerald-500/20 active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border border-olive bg-white dark:bg-slate-900 dark:border-slate-700 px-5 py-3 text-sm font-semibold text-primary dark:text-emerald-400 transition-all hover:bg-secondary-bg dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-olive focus:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-xs;
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-olive/40 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all focus:outline-none focus:ring-2 focus:ring-olive focus:border-transparent;
+    @apply w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent;
   }
 
   .card {
-    @apply rounded-2xl border border-olive/10 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft dark:shadow-none transition-colors duration-200;
+    @apply rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-soft transition-all duration-200 hover:shadow-md;
   }
 
   .sidebar-item {
-    @apply relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 transition-all hover:bg-secondary-bg dark:hover:bg-slate-800 cursor-pointer;
+    @apply relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 transition-all hover:bg-slate-100/80 dark:hover:bg-slate-800/80 cursor-pointer;
   }
 
   .sidebar-item-active {
-    @apply bg-primary text-white dark:bg-emerald-900/60 dark:text-emerald-200 hover:bg-primary-hover dark:hover:bg-emerald-900/80;
+    @apply bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md dark:from-emerald-700 dark:to-teal-800 dark:text-white hover:from-emerald-700 hover:to-teal-700;
   }
 }
 

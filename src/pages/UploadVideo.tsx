@@ -4,7 +4,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
-import { Upload, FileVideo, X, CheckCircle2, AlertCircle, Play, ShieldAlert, Cpu } from 'lucide-react';
+import { Upload, FileVideo, X, CheckCircle2, AlertCircle, Play, ShieldAlert, Cpu, Sparkles, Sliders } from 'lucide-react';
 
 interface UploadItem {
   id: string;
@@ -59,7 +59,6 @@ export default function UploadVideo() {
       prev.map((item) => (item.id === id ? { ...item, status: 'uploading', progress: 10 } : item)),
     );
 
-    // Simulate progress
     let currentProgress = 10;
     const interval = setInterval(() => {
       currentProgress += Math.floor(Math.random() * 25) + 15;
@@ -92,25 +91,31 @@ export default function UploadVideo() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto font-sans">
       <PageHeader
         title="Upload Examination Video"
-        description="Upload offline CCTV footage for asynchronous AI anomaly detection & behavior analysis"
+        description="Upload offline CCTV footage for asynchronous SecureX AI anomaly detection & behavior analysis"
         breadcrumb={[{ label: 'Upload Video' }]}
       />
 
       {/* Analysis Settings Bar */}
-      <Card>
-        <CardContent className="p-5">
+      <Card className="border-emerald-500/20 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Sliders className="h-5 w-5 text-emerald-500" />
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+              AI Detection Configuration Profile
+            </h3>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 Target Examination Hall
               </label>
               <select
                 value={selectedHall}
                 onChange={(e) => setSelectedHall(e.target.value)}
-                className="input-field"
+                className="input-field border-emerald-500/30"
               >
                 <option value="Hall A - Main Examination">Hall A - Main Examination</option>
                 <option value="Hall B - Science Block">Hall B - Science Block</option>
@@ -120,31 +125,31 @@ export default function UploadVideo() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                 AI Detection Profile
               </label>
               <select
                 value={selectedAnalysis}
                 onChange={(e) => setSelectedAnalysis(e.target.value as any)}
-                className="input-field"
+                className="input-field border-emerald-500/30"
               >
-                <option value="full">Full Analysis (Behavior, Anomaly & Attendance)</option>
-                <option value="anomaly_only">Anomaly & Suspicious Movement Only</option>
-                <option value="attendance">Student Verification & Attendance Only</option>
+                <option value="full">Full Analysis (Behavior, Talking, & Attendance)</option>
+                <option value="anomaly_only">Anomaly & Head Pose/Talking Only</option>
+                <option value="attendance">Student Verification & Attendance Roster Only</option>
               </select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Drag and Drop Box */}
-      <Card>
-        <CardContent className="p-6">
+      {/* Vibrant Drag and Drop Box */}
+      <Card className="border-cyan-500/30 shadow-lg overflow-hidden">
+        <CardContent className="p-8">
           <div
             className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
               dragActive
-                ? 'border-primary bg-secondary-bg/80 scale-[1.01]'
-                : 'border-olive/30 hover:border-olive/60 hover:bg-secondary-bg/20'
+                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 scale-[1.01]'
+                : 'border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50/20 dark:hover:bg-slate-900/60'
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -153,19 +158,19 @@ export default function UploadVideo() {
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
           >
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary-bg text-primary shadow-sm">
-              <Upload className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30">
+              <Upload className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Drag & Drop CCTV Footage Files</h3>
-            <p className="mt-1.5 text-sm text-slate-500 max-w-sm">
-              Select or drop your examination camera recordings to run automated AI computer vision scans.
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">Drag & Drop CCTV Footage Files</h3>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+              Select or drop your examination camera recordings to run automated SecureX AI computer vision scans.
             </p>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                <FileVideo className="h-3.5 w-3.5 text-primary" /> Supports MP4, AVI, MOV, MKV
+            <div className="mt-4 flex items-center gap-3 text-xs font-semibold text-slate-500">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 font-mono">
+                <FileVideo className="h-3.5 w-3.5" /> MP4, AVI, MOV, MKV
               </span>
               <span>•</span>
-              <span>Up to 2GB per file</span>
+              <span className="font-mono">Up to 2GB per file</span>
             </div>
 
             <input
@@ -177,7 +182,7 @@ export default function UploadVideo() {
               id="video-upload-input"
             />
             <label htmlFor="video-upload-input" className="mt-6 inline-block">
-              <Button variant="secondary" type="button">
+              <Button type="button" className="btn-primary">
                 Browse Video Files
               </Button>
             </label>
@@ -187,87 +192,71 @@ export default function UploadVideo() {
 
       {/* File Queue List */}
       {queue.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-primary" />
-              Upload Queue ({queue.length})
+        <Card className="border-purple-500/30 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+              <Cpu className="h-5 w-5 text-purple-500" />
+              Uploaded Video Processing Queue ({queue.length})
             </CardTitle>
             {queue.some((item) => item.status === 'pending') && (
               <Button size="sm" onClick={uploadAll} leftIcon={<Play className="h-3.5 w-3.5" />}>
-                Upload All
+                Process All Videos
               </Button>
             )}
           </CardHeader>
-
-          <CardContent className="space-y-4">
-            <AnimatePresence>
+          <CardContent className="pt-4">
+            <div className="space-y-3">
               {queue.map((item) => (
-                <motion.div
+                <div
                   key={item.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="rounded-xl border border-olive/15 p-4 bg-white shadow-sm space-y-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/40"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-secondary-bg text-primary">
-                        <FileVideo className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">
-                          {item.file.name}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                          <span>{formatFileSize(item.file.size)}</span>
-                          <span>•</span>
-                          <span>{item.examHall}</span>
-                        </div>
-                      </div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+                      <FileVideo className="h-5 w-5" />
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      {item.status === 'completed' && (
-                        <Badge variant="success" dot>
-                          Ready for AI Scan
-                        </Badge>
-                      )}
-                      {item.status === 'uploading' && (
-                        <Badge variant="warning">Uploading {item.progress}%</Badge>
-                      )}
-                      {item.status === 'pending' && <Badge variant="default">Queued</Badge>}
-
-                      {item.status === 'pending' && (
-                        <Button size="sm" onClick={() => startUpload(item.id)}>
-                          Upload
-                        </Button>
-                      )}
-
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Remove file"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                        {item.file.name}
+                      </p>
+                      <p className="text-xs text-slate-400 font-mono">
+                        {formatFileSize(item.file.size)} • {item.examHall}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  {item.status === 'uploading' && (
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <motion.div
-                        className="bg-primary h-2 rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.progress}%` }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </div>
-                  )}
-                </motion.div>
+                  <div className="flex items-center gap-3">
+                    {item.status === 'pending' && (
+                      <Button size="sm" variant="secondary" onClick={() => startUpload(item.id)}>
+                        Analyze Now
+                      </Button>
+                    )}
+                    {item.status === 'uploading' && (
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 transition-all duration-300"
+                            style={{ width: `${item.progress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-mono font-bold text-emerald-500">{item.progress}%</span>
+                      </div>
+                    )}
+                    {item.status === 'completed' && (
+                      <Badge variant="success" className="text-xs font-bold">
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Analysis Ready
+                      </Badge>
+                    )}
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </AnimatePresence>
+            </div>
           </CardContent>
         </Card>
       )}
