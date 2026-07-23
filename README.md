@@ -1,4 +1,4 @@
-<div align="center">
+
 
 # 🛡️ SecureX
 ### AI-Powered Smart Exam Invigilation & Proctoring System
